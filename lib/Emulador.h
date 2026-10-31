@@ -11,5 +11,6 @@ typedef struct Emulador {
     uint16_t contador;
 } Emulador;
 
-Emulador createEmulator();  
+void createEmulator(Emulador * param);  
+void incContador(Emulador * param);
 #endif // !EMULATOR
