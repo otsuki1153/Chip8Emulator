@@ -3,7 +3,7 @@
 
 
 void initEmulator(Emulador * param){
-    param->sysCount = 0x200;
+    param->sysCount = START_ADDR;
     param->regI = 0;
     param->posPilha = 0;
     memset(param->memoria, 0,sizeof(param->memoria));

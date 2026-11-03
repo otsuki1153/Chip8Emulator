@@ -2,8 +2,10 @@
 #define EMULATOR
 
 #include <stdint.h>
+#include <stdbool.h>
 #define MEMORY_S 4096
 #define STACK_S 16
+#define START_ADDR 0x200
 
 typedef struct Emulador {
     uint8_t memoria[MEMORY_S];
