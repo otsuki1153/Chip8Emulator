@@ -13,9 +13,9 @@ int main(){
 
     fseek(arquivo, 0, SEEK_END);
 
-    long tamanho = ftell(arquivo);
+    long unsigned int tamanho = ftell(arquivo);
 
-    if(tamanho == -1L){
+    if(tamanho == -1UL){
         printf("Erro ao ler o tamanho\n");
         fclose(arquivo);
         return 1;
@@ -28,11 +28,18 @@ int main(){
     }
 
     fseek(arquivo, 0, SEEK_SET);
-    fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo);
+    if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
+        for(long unsigned int i = START_ADDR; i < START_ADDR + tamanho; i = i+2){
+            
+            printf("%02X", emu.memoria[i]); 
+        }
 
-    for(int i = START_ADDR; i < tamanho; i++){
-        printf("%02X", emu.memoria[i]);
+    } else{
+        printf("erro na leitura do arquivo");
     }
+
+
+    
 
     fclose(arquivo);
     return 0;
