@@ -27,12 +27,16 @@ int main(){
         return 1;
     }
 
+    char  comando[50]; 
+    uint16_t opcode = 0x0;
+    uint8_t nibble[4];
+
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
-        for(long unsigned int i = START_ADDR; i < START_ADDR + tamanho; i = i+2){
-            char  comando[50]; 
-            // decode(emu.memoria[i], emu.memoria[i+1], comando);
-            // printf("%02X %02X ", emu.memoria[i], emu.memoria[i + 1]); 
+        while(emu.sysCount < START_ADDR + tamanho){
+            fetch(&emu, opcode);
+            decode(opcode, nibble);
+            execute(nibble,comando);
             printf("%s\n", comando);
         }
 
