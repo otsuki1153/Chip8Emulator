@@ -99,8 +99,8 @@ A validação usa a **suíte de testes do Timendus** e a ROM *IBM Logo*. A saíd
 - [Guia "How to write an emulator (CHIP-8 interpreter)", de Tobias V. Langhoff](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
 - [Tabela de opcodes do CHIP-8 (Gulrak)](https://chip8.gulrak.net)
 - [Suíte de testes do Timendus](https://github.com/Timendus/chip8-test-suite)
-- Cowgod's CHIP-8 Technical Reference (convenção de mnemônicos)
-- Comunidade EmuDev (Discord e r/EmuDev)
+- [Cowgod's CHIP-8 Technical Reference (convenção de mnemônicos)](https://github.com/trapexit/chip-8_documentation/blob/master/Misc/Cowgod's%20CHIP-8%20Technical%20Reference.pdf)
+- Comunidade EmuDev (Discord e r/EmuDev) *sem link
 
 ## Licença
 
