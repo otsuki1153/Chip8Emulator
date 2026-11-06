@@ -39,7 +39,7 @@ uint16_t pilhaPop(Emulador * param, bool * success){
 }
 
 void fetch(Emulador * param, uint16_t *opcodeReturn){
-    uint16_t opcode = (param->memoria[param->sysCount] << 8) || param->memoria[param->sysCount + 1];
+    uint16_t opcode = (param->memoria[param->sysCount] << 8) | param->memoria[param->sysCount + 1];
     incSysCount(param);
     *opcodeReturn = opcode;
 }
@@ -55,8 +55,8 @@ void decode(uint16_t opcode, uint8_t nibble[4]){
 }
 
 void execute(uint8_t nibble[4], char *retorno){
-    uint8_t NN = (nibble[2] << 4) || nibble[3];
-    uint16_t NNN = (nibble[1] << 8) || (nibble[2] << 4) || nibble[3];
+    uint8_t NN = (nibble[2] << 4) | nibble[3];
+    uint16_t NNN = (nibble[1] << 8) | (nibble[2] << 4) | nibble[3];
 
     switch (nibble[0]){
         case 0x0:
