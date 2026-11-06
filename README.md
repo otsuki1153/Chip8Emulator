@@ -1,4 +1,4 @@
-# CHIP-8 em C: disassembler e emulador
+# CHIP-8 em C: [disassembler](https://github.com/otsuki1153/Disassembler-Model) e emulador
 
 Projeto de estudo para aprender, na prática, como um emulador funciona por dentro. O alvo é o **CHIP-8**, uma máquina virtual simples (~35 instruções, 4 KB de memória, tela monocromática de 64×32), que serve de porta de entrada para emular hardware real, como Game Boy e NES.
 
@@ -53,7 +53,7 @@ gcc -Wall -Wextra main.c ../lib/Emulador.c -o emulador
 
 Todos os arquivos `.c` precisam aparecer no comando. Os `.h` entram sozinhos pelos `#include`.
 
-### Disassembler
+### [Disassembler](https://github.com/otsuki1153/Disassembler-Model)
 
 O disassembler lê uma ROM e imprime cada par de bytes como instrução, com o endereço:
 
