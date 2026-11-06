@@ -20,5 +20,6 @@ void initEmulator(Emulador * param);
 void incSysCount(Emulador * param);
 bool pilhaPush(Emulador * param, uint16_t address);
 uint16_t pilhaPop(Emulador * param, bool * success);
-void decode(uint8_t high, uint8_t low, char *retorno);
+void fetch(uint8_t high, uint8_t low, uint16_t *opcodeReturn);
+void decode(uint16_t opcodeParam, char *retorno);
 #endif // !EMULATOR

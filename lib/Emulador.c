@@ -38,12 +38,11 @@ uint16_t pilhaPop(Emulador * param, bool * success){
     return param->pilha[param->posPilha];
 }
 
-void decode(uint8_t high, uint8_t low, char *retorno){
-    uint8_t low_byte = low;
-    uint8_t high_byte = high;
-    // char retorno[50];
+void decode(uint16_t opcodeParam, char *retorno){
+    uint16_t opcode = opcodeParam;
 
-    uint16_t opcode = (high_byte << 8) | low_byte;
+    uint8_t high_byte = (opcode >> 8);
+    uint8_t low_byte = opcode & 0xFF;
     
     uint8_t n1 = (high_byte >> 4) & 0x0F;
     uint8_t n2 =  high_byte  & 0x0F;
