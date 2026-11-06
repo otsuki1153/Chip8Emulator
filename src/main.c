@@ -34,7 +34,7 @@ int main(){
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
         while(emu.sysCount < START_ADDR + tamanho){
-            fetch(&emu, opcode);
+            fetch(&emu, &opcode);
             decode(opcode, nibble);
             execute(nibble,comando);
             printf("%s\n", comando);
