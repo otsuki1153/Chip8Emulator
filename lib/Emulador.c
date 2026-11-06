@@ -54,7 +54,7 @@ void decode(uint16_t opcode, uint8_t nibble[4]){
     nibble[3] = low_byte & 0x0F;
 }
 
-void execute(uint8_t nibble[4], char *retorno){
+void execute(Emulador * param, uint8_t nibble[4], char *retorno){
     uint8_t NN = (nibble[2] << 4) | nibble[3];
     uint16_t NNN = (nibble[1] << 8) | (nibble[2] << 4) | nibble[3];
 
@@ -69,40 +69,57 @@ void execute(uint8_t nibble[4], char *retorno){
             }
             break;
         case 0x1:
+            param->sysCount = NNN;
             snprintf(retorno, 50, "JP 0x%03X", NNN);
             break;
         case 0x2:
             snprintf(retorno, 50, "CALL 0x%03X", NNN);
             break;
         case 0x3:
+            if(param->regV[nibble[1]] == NN){
+
+            }
             snprintf(retorno, 50, "SE V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x4:
+            if(param->regV[nibble[1]] != NN){
+                
+            }
             snprintf(retorno, 50, "SNE V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x5:
             if(nibble[3] == 0x0){
+                if(param->regV[nibble[1]] == param->regV[nibble[2]]){
+                    
+                }
                 snprintf(retorno, 50, "SE V%X, V%X",nibble[1], nibble[2]);
             } else{
                 strcpy(retorno, "????");
             }
             break;
         case 0x6:
+            param->regV[nibble[1]] = NN;
             snprintf(retorno, 50, "LD V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x7:
+            param->regV[nibble[1]] += NN;
             snprintf(retorno, 50, "ADD V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x8:
             if(nibble[3] == 0x0){
+                param->regV[nibble[1]] = param->regV[nibble[2]];
                 snprintf(retorno, 50, "LD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x1){
+                param->regV[nibble[1]] = param->regV[nibble[1]] | param->regV[nibble[2]];
                 snprintf(retorno, 50, "OR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x2){
+                param->regV[nibble[1]] = param->regV[nibble[1]] & param->regV[nibble[2]];
                 snprintf(retorno, 50, "AND V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x3){
+                param->regV[nibble[1]] = param->regV[nibble[1]] ^ param->regV[nibble[2]];
                 snprintf(retorno, 50, "XOR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x4){
+                
                 snprintf(retorno, 50, "ADD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x5){
                 snprintf(retorno, 50, "SUB V%X, V%X", nibble[1], nibble[2]);
@@ -118,15 +135,20 @@ void execute(uint8_t nibble[4], char *retorno){
             break;
         case 0x9:
             if(nibble[3] == 0x0){
+                if(param->regV[nibble[1]] != param->regV[nibble[2]]){
+
+                }
                 snprintf(retorno, 50, "SNE V%X, V%X", nibble[1], nibble[2]);
             } else{
                 strcpy(retorno, "????");
             }
             break;
         case 0xA:
+            param->regI = NNN;
             snprintf(retorno, 50, "LD I, 0x%03X", NNN);
             break;
         case 0xB:
+            param->sysCount = NNN + param->regV[0];
             snprintf(retorno, 50, "JP V0, 0x%03X",NNN);
             break;
         case 0xC:
@@ -159,6 +181,7 @@ void execute(uint8_t nibble[4], char *retorno){
                 } else if(nibble[3] == 0x8){
                     snprintf(retorno, 50, "LD ST, V%X",nibble[1]);
                 } else if(nibble[3] == 0xE){
+                    param->regV[nibble[1]] += param->regI;
                     snprintf(retorno, 50, "ADD I, V%X",nibble[1]);
                 } else{
                     strcpy(retorno, "????");
