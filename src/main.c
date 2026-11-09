@@ -30,22 +30,22 @@ int main(){
     char  comando[50]; 
     uint16_t opcode = 0x0;
     uint8_t nibble[4];
+    uint16_t sysCountStamp = 0x0;
 
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
-        while(emu.sysCount < START_ADDR + tamanho){
+        while(emu.sysCount != sysCountStamp){
+            sysCountStamp = emu.sysCount;
             fetch(&emu, &opcode);
             decode(opcode, nibble);
-            execute(nibble,comando);
+            disassemble(nibble, comando);
+            execute(&emu, nibble);
             printf("%s\n", comando);
         }
 
     } else{
         printf("erro na leitura do arquivo");
     }
-
-
-    
 
     fclose(arquivo);
     return 0;

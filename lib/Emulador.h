@@ -22,5 +22,6 @@ bool pilhaPush(Emulador * param, uint16_t address);
 uint16_t pilhaPop(Emulador * param, bool * success);
 void fetch(Emulador * param, uint16_t *opcodeReturn);
 void decode(uint16_t opcode, uint8_t nibble[4]);
-void execute(uint8_t nibble[4], char *retorno);
+void execute(Emulador * param, uint8_t nibble[4]);
+void disassemble(uint8_t nibble[4], char * retorno);
 #endif // !EMULATOR
