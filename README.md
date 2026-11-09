@@ -17,7 +17,7 @@ Tudo é escrito em **C**, sem frameworks, com a ideia de entender cada camada em
 |---|---|
 | Disassembler de CHIP-8 | Concluído |
 | Emulador, etapa 1: memória, registradores, pilha e carga da ROM em `0x200` | Concluída |
-| Emulador, etapa 2: ciclo fetch → decode → execute | Em andamento |
+| Emulador, etapa 2: ciclo fetch → decode → execute | Concluída  |
 | Tela (`DXYN`), saltos, sub-rotinas, aritmética, timers e teclado | Planejado |
 | Janela com SDL2 | Planejado |
 

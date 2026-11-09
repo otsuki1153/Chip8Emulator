@@ -365,3 +365,12 @@ void disassemble(uint8_t nibble[4], char * retorno){
             break;
     }
 }
+
+
+void printStatus(Emulador * param){
+    printf("I : %d\n", param->regI);
+    for(int i = 0; i < 16; i++){
+        printf("V%u : %d\n", i, param->regV[i]);
+    }
+    printf("sysCount : %u\n", param->sysCount);
+}
