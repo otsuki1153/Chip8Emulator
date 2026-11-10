@@ -36,7 +36,6 @@ int main(){
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
         while(emu.sysCount != sysCountStamp){
             // printStatus(&emu);
-            printScreen(&emu);
             sysCountStamp = emu.sysCount;
             fetch(&emu, &opcode);
             decode(opcode, nibble);
@@ -44,7 +43,8 @@ int main(){
             execute(&emu, nibble);
             // printf("%s\n", comando);
         }
-
+        printScreen(&emu);
+        
     } else{
         printf("erro na leitura do arquivo");
     }

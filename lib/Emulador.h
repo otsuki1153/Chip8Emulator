@@ -6,11 +6,11 @@
 #define MEMORY_S 4096
 #define STACK_S 16
 #define START_ADDR 0x200
-#define LENGTH 64
+#define WIDTH 64
 #define HEIGHT 32
 
 typedef struct Emulador{
-    bool tela[LENGTH][HEIGHT];
+    bool tela[HEIGHT][WIDTH];
     uint8_t memoria[MEMORY_S];
     uint16_t pilha [STACK_S];
     uint8_t posPilha;

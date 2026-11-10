@@ -157,15 +157,29 @@ void execute(Emulador * param, uint8_t nibble[4]){
             // snprintf(retorno, 50, "RND V%X, 0x%02X", nibble[1], NN);
             break;
         case 0xD:
-            int col = param->regV[nibble[1]];
-            int lin = param->regV[nibble[2]];
-            int length = col + 8;
-            int height = lin + nibble[3];
-            for(int i = lin; i < height; i++){
-                for(int j = col; j< length; j++){
-                    param->tela[i][j] = true;
+            uint8_t sX = param->regV[nibble[1]];
+            uint8_t sY = param->regV[nibble[2]];
+            param->regV[0xF] = 0;
+            for(int row = 0; row < HEIGHT; row++){
+                if(sY + row >= 32) break;
+
+                uint8_t spriteB = param->memoria[param->regI + row];
+
+                for(int col = 0; col < 8;col++){
+                    if(sX + col >= 64) break;
+
+                    if((spriteB & (0x80 >> col)) != 0){
+                        int posX = (sX + col);
+                        int posY = (sY + row);
+                        if(param->tela[posY][posX] == 1){
+                            param->regV[0xF] = 1;
+                        }
+
+                        param->tela[posY][posX] ^= 1;
+                    }
                 }
             }
+        
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
         case 0xE:
@@ -393,7 +407,7 @@ void printStatus(Emulador * param){
 void printScreen(Emulador * param){
     for(int i = 0; i <HEIGHT; i++){
         printf("\n");
-        for(int j = 0; j<LENGTH; j++){
+        for(int j = 0; j<WIDTH; j++){
             if(param->tela[i][j] == true){
                 printf("*");
             } else{
