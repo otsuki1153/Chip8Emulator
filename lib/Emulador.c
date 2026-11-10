@@ -9,6 +9,7 @@ void initEmulator(Emulador * param){
     memset(param->memoria, 0,sizeof(param->memoria));
     memset(param->regV, 0,sizeof(param->regV));
     memset(param->pilha, 0,sizeof(param->pilha));
+    memset(param->tela, false, sizeof(param->tela));
 }
 
 void incSysCount(Emulador * param){
@@ -61,6 +62,7 @@ void execute(Emulador * param, uint8_t nibble[4]){
     switch (nibble[0]){
         case 0x0:
             if(nibble[1] == 0x0 && nibble[2] == 0xE && nibble[3] == 0){
+                memset(param->tela, false, sizeof(param->tela));
                 // strcpy(retorno, "CLS");
             } else if(nibble[1] == 0x0 && nibble[2] == 0xE && nibble[3] == 0xE){
                 // strcpy(retorno, "RET");
@@ -155,6 +157,15 @@ void execute(Emulador * param, uint8_t nibble[4]){
             // snprintf(retorno, 50, "RND V%X, 0x%02X", nibble[1], NN);
             break;
         case 0xD:
+            int col = param->regV[nibble[1]];
+            int lin = param->regV[nibble[2]];
+            int length = col + 8;
+            int height = lin + nibble[3];
+            for(int i = lin; i < height; i++){
+                for(int j = col; j< length; j++){
+                    param->tela[i][j] = true;
+                }
+            }
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
         case 0xE:
@@ -220,6 +231,7 @@ void execute(Emulador * param, uint8_t nibble[4]){
             break;
     }
 }
+
 
 
 void disassemble(uint8_t nibble[4], char * retorno){
@@ -368,9 +380,25 @@ void disassemble(uint8_t nibble[4], char * retorno){
 
 
 void printStatus(Emulador * param){
+    printf("----------STATUS-----------\n");
     printf("I : %d\n", param->regI);
     for(int i = 0; i < 16; i++){
         printf("V%u : %d\n", i, param->regV[i]);
     }
     printf("sysCount : %u\n", param->sysCount);
 }
+
+
+
+void printScreen(Emulador * param){
+    for(int i = 0; i <HEIGHT; i++){
+        printf("\n");
+        for(int j = 0; j<LENGTH; j++){
+            if(param->tela[i][j] == true){
+                printf("*");
+            } else{
+                printf(" ");
+            }
+        }
+    }
+}   
