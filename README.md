@@ -1,106 +1,84 @@
-# CHIP-8 em C: [disassembler](https://github.com/otsuki1153/Disassembler-Model) e emulador
+# Emulador CHIP-8 em C
 
-Projeto de estudo para aprender, na prática, como um emulador funciona por dentro. O alvo é o **CHIP-8**, uma máquina virtual simples (~35 instruções, 4 KB de memória, tela monocromática de 64×32), que serve de porta de entrada para emular hardware real, como Game Boy e NES.
+Projeto de estudo para explorar o funcionamento de um interpretador CHIP-8 e de um disassembler. O núcleo está escrito em C e, no estado atual, executa algumas instruções e desenha em uma tela textual no terminal.
 
-Tudo é escrito em **C**, sem frameworks, com a ideia de entender cada camada em vez de usar algo pronto.
+## Estado atual
 
-## Objetivos
+O projeto inclui:
 
-- Entender o ciclo **fetch → decode → execute** de uma CPU.
-- Praticar manipulação de bits (máscaras, deslocamentos, big-endian vs. little-endian).
-- Aprender a organizar um projeto em C com vários arquivos (`.h` / `.c`) e compilar pelo terminal.
-- Validar cada etapa com ROMs de teste, em vez de apenas "jogar e ver se funciona".
+- Estado da máquina com 4.096 bytes de memória, 16 registradores `V0`–`VF`, registrador `I`, contador de programa, pilha de 16 posições e tela monocromática de 64 × 32.
+- Inicialização da máquina e operações de push/pop da pilha, com retorno indicando overflow ou underflow.
+- Busca de opcodes de dois bytes em big-endian, separação em nibbles e avanço do contador de programa.
+- Disassembler que converte opcodes em mnemônicos para depuração.
+- Execução implementada para `00E0`, `1NNN`, `3XNN`, `4XNN`, `5XY0`, `6XNN`, `7XNN`, `8XY0`–`8XY3`, `9XY0`, `ANNN`, `BNNN`, `DXYN` e `FX1E`.
+- Desenho de sprites na tela textual e indicação de colisão em `VF`.
+- Um programa de entrada que carrega a ROM `IBM Logo.ch8`, exibe o estado dos registradores e tenta executar o programa.
 
-## Status
-
-| Etapa | Situação |
-|---|---|
-| Disassembler de CHIP-8 | Concluído |
-| Emulador, etapa 1: memória, registradores, pilha e carga da ROM em `0x200` | Concluída |
-| Emulador, etapa 2: ciclo fetch → decode → execute | Concluída  |
-| Tela (`DXYN`), saltos, sub-rotinas, aritmética, timers e teclado | Planejado |
-| Janela com SDL2 | Planejado |
+O disassembler reconhece mais instruções do que o executor implementa. Instruções sem implementação no `execute` não alteram o estado da máquina (com exceção do avanço do contador feito por `fetch`). A ROM IBM Logo pode não terminar: o programa não implementa um ciclo de temporização, teclado ou outras instruções necessárias para compatibilidade geral.
 
 ## Estrutura
 
-```
+```text
 .
-├── IBM Logo.ch8        # ROMs usadas nos testes
+├── IBM Logo.ch8        # ROM de exemplo
 ├── lib/
-│   ├── Emulador.h      # struct Emulador, constantes e declarações
-│   └── Emulador.c      # inicialização, pilha e tradução de opcodes
+│   ├── Emulador.h      # Estrutura, constantes e declarações da API
+│   └── Emulador.c      # Estado, ciclo de instruções, disassembler e saída no terminal
 └── src/
-    └── main.c          # programa de teste / ponto de entrada
+    └── main.c          # Carrega a ROM e executa o ciclo de teste
 ```
 
-### O que há em `Emulador.h`
+## Compilar e executar
 
-- `memoria[4096]`: memória do CHIP-8. A ROM é carregada a partir do endereço `0x200`.
-- `regV[16]`: registradores `V0` a `VF`.
-- `regI`: registrador de índice.
-- `sysCount`: contador de programa (endereço da próxima instrução).
-- `pilha[16]` e `posPilha`: pilha de endereços de retorno, com `pilhaPush` e `pilhaPop` que detectam overflow e underflow.
-- `decode(...)`: traduz um opcode de 2 bytes para texto (`6XNN` → `LD V1, 0x08`), útil para depurar a execução.
+Requisitos: GCC e terminal. Execute os comandos a partir da pasta `src`, pois o caminho para a ROM é relativo a essa pasta:
 
-## Como compilar e rodar
-
-Requisitos: `gcc` e um terminal. Os comandos assumem que você está **na pasta do `main.c`**, porque o caminho da ROM é relativo.
-
-```bash
+```sh
 gcc -Wall -Wextra main.c ../lib/Emulador.c -o emulador
 ./emulador
 ```
 
-Todos os arquivos `.c` precisam aparecer no comando. Os `.h` entram sozinhos pelos `#include`.
+No Windows, execute o binário gerado com `emulador.exe`.
 
-### [Disassembler](https://github.com/otsuki1153/Disassembler-Model)
+O programa abre `../IBM Logo.ch8`, carrega a ROM em `0x200`, imprime o estado dos registradores durante a execução e desenha o conteúdo do buffer gráfico no terminal. O laço final de espera mantém o processo aberto depois da execução.
 
-O disassembler lê uma ROM e imprime cada par de bytes como instrução, com o endereço:
+## Componentes principais
 
-```
-0x0200 : 00E0 -> CLS
-0x0202 : A22A -> LD I, 0x22A
-0x0204 : 600C -> LD V0, 0x0C
-0x0206 : 6108 -> LD V1, 0x08
-0x0208 : D01F -> DRW V0, V1, 0xF
-```
-
-Ao executar, um menu permite escolher a ROM a desmontar.
-
-## Como o CHIP-8 foi decodificado
-
-- Cada opcode tem **2 bytes** e é lido em **big-endian**: o primeiro byte do arquivo é a parte alta.
-- O primeiro nibble escolhe a família da instrução; os outros formam `X`, `Y`, `N`, `NN` ou `NNN`, conforme a instrução.
-- Os bytes são lidos um a um para um array, e o opcode é montado com deslocamento e OR. Assim o resultado não depende da arquitetura da máquina em que o programa roda.
-- O contador de programa avança 2 logo após o *fetch*, de modo que instruções de salto só precisam sobrescrevê-lo.
-- Os mnemônicos seguem a convenção da referência do Cowgod (`LD`, `SE`, `SNE`, `JP`, `DRW`, `RND`...).
-
-## Roadmap de estudo
-
-1. **Disassembler de CHIP-8**: concluído.
-2. **Emulador de CHIP-8**: núcleo, depois tela e janela.
-3. **Debugger** embutido (breakpoints, execução passo a passo, dump de estado).
-4. **Intel 8080 + Space Invaders**: primeira CPU real.
-5. **Game Boy**, em marcos testáveis (CPU, memória, timers, PPU, joypad).
-6. **NES** (6502), e um projeto autoral a escolher.
+- `Emulador` reúne memória, tela, registradores, pilha e contador de programa.
+- `initEmulator` zera o estado e inicia `sysCount` em `0x200`.
+- `fetch` lê o opcode na posição atual e avança `sysCount` em dois bytes.
+- `decode` separa o opcode em quatro nibbles; `execute` aplica as operações implementadas.
+- `disassemble` produz o mnemônico textual do opcode, independentemente de sua execução estar implementada.
+- `printStatus` e `printScreen` exibem o estado da máquina no terminal.
 
 ## Limitações conhecidas
 
-- O disassembler é **linear**: ele lê a ROM de ponta a ponta e não separa código de dados. Por isso, regiões de sprites aparecem como instruções estranhas (`????`, `SYS ...`). Não é um defeito da decodificação.
-- ROMs com número ímpar de bytes têm o último byte tratado de forma especial.
-- Ainda não há tela, teclado nem som.
+- O carregador no `main.c` limita a ROM a 3.584 bytes, para caber na memória a partir de `0x200`.
+- Não há validação de limites de memória no `fetch` nem no acesso aos dados dos sprites.
+- `CALL` (`2NNN`) e `RET` (`00EE`) são reconhecidos pelo disassembler, mas ainda não são executados; as funções da pilha existem, mas não estão ligadas a essas instruções.
+- A maior parte das instruções aritméticas, de teclado, timers e som ainda não é executada.
+- Não há janela gráfica nem entrada de teclado; a tela é impressa como texto.
+- O desenho interrompe o sprite nas bordas, em vez de fazê-lo voltar ao lado oposto.
+- O laço principal de `main.c` usa a repetição do valor do contador de programa como condição de parada; não é um mecanismo geral de término de ROM.
 
-## Testes
+## Disassembler
 
-A validação usa a **suíte de testes do Timendus** e a ROM *IBM Logo*. A saída do `decode` do emulador é conferida contra a do disassembler, linha a linha.
+O disassembler é linear: interpreta cada par de bytes como uma instrução, sem distinguir código de dados. Bytes de sprites ou dados podem, portanto, aparecer como instruções inválidas ou inesperadas.
+
+## Próximos passos possíveis
+
+- Implementar `CALL` e `RET` usando a pilha existente.
+- Completar a execução dos grupos aritmético, teclado e timers.
+- Adicionar carregamento de ROM com validações de tamanho e de acesso à memória.
+- Implementar temporização e uma interface gráfica com teclado.
+- Criar testes automatizados para as instruções já implementadas.
 
 ## Referências
 
-- [Guia "How to write an emulator (CHIP-8 interpreter)", de Tobias V. Langhoff](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
-- [Tabela de opcodes do CHIP-8 (Gulrak)](https://chip8.gulrak.net)
-- [Suíte de testes do Timendus](https://github.com/Timendus/chip8-test-suite)
-- [Cowgod's CHIP-8 Technical Reference (convenção de mnemônicos)](https://github.com/trapexit/chip-8_documentation/blob/master/Misc/Cowgod's%20CHIP-8%20Technical%20Reference.pdf)
-- Comunidade EmuDev (Discord e r/EmuDev) *sem link
+- [Meu projeto de disassembler CHIP-8](https://github.com/otsuki1153/Disassembler-Model)
+- [Como escrever um interpretador CHIP-8 — Tobias V. Langhoff](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
+- [Tabela de opcodes CHIP-8 — Gulrak](https://chip8.gulrak.net)
+- [Suíte de testes CHIP-8 — Timendus](https://github.com/Timendus/chip8-test-suite)
+- [Referência técnica CHIP-8 de Cowgod](https://github.com/trapexit/chip-8_documentation/blob/master/Misc/Cowgod's%20CHIP-8%20Technical%20Reference.pdf)
 
 ## Licença
 

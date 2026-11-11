@@ -409,7 +409,7 @@ void printScreen(Emulador * param){
         printf("\n");
         for(int j = 0; j<WIDTH; j++){
             if(param->tela[i][j] == true){
-                printf("█");
+                printf("H");
             } else{
                 printf(" ");
             }
