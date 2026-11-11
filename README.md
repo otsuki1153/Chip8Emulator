@@ -12,7 +12,7 @@ O projeto inclui:
 - Disassembler que converte opcodes em mnemônicos para depuração.
 - Execução implementada para `00E0`, `1NNN`, `3XNN`, `4XNN`, `5XY0`, `6XNN`, `7XNN`, `8XY0`–`8XY3`, `9XY0`, `ANNN`, `BNNN`, `DXYN` e `FX1E`.
 - Desenho de sprites na tela textual e indicação de colisão em `VF`.
-- Um programa de entrada que carrega a ROM `IBM Logo.ch8`, exibe o estado dos registradores e tenta executar o programa.
+- Um programa de entrada que recebe o caminho de uma ROM como argumento, exibe o estado dos registradores e executa o programa.
 
 O disassembler reconhece mais instruções do que o executor implementa. Instruções sem implementação no `execute` não alteram o estado da máquina (com exceção do avanço do contador feito por `fetch`). A ROM IBM Logo pode não terminar: o programa não implementa um ciclo de temporização, teclado ou outras instruções necessárias para compatibilidade geral.
 
@@ -20,28 +20,53 @@ O disassembler reconhece mais instruções do que o executor implementa. Instru�
 
 ```text
 .
-├── IBM Logo.ch8        # ROM de exemplo
+├── IBM_Logo.ch8        # ROM de exemplo
 ├── lib/
 │   ├── Emulador.h      # Estrutura, constantes e declarações da API
 │   └── Emulador.c      # Estado, ciclo de instruções, disassembler e saída no terminal
 └── src/
-    └── main.c          # Carrega a ROM e executa o ciclo de teste
+    ├── main.c           # Recebe o caminho da ROM e executa o ciclo
+    ├── emulador         # Executável Linux incluído
+    └── emulador.exe     # Executável Windows incluído
 ```
 
 ## Compilar e executar
 
-Requisitos: GCC e terminal. Execute os comandos a partir da pasta `src`, pois o caminho para a ROM é relativo a essa pasta:
+O programa recebe o caminho da ROM como único argumento. A ROM de exemplo está na raiz do projeto. Os comandos abaixo devem ser executados a partir de `src`.
+
+### Linux
+
+Para usar o executável incluído:
+
+```sh
+./emulador ../IBM_Logo.ch8
+```
+
+Se não tiver permissão para executá-lo, rode `chmod +x emulador` uma vez. Para compilar novamente com GCC:
 
 ```sh
 gcc -Wall -Wextra main.c ../lib/Emulador.c -o emulador
-./emulador
+./emulador ../IBM_Logo.ch8
 ```
 
-No Windows, execute o binário gerado com `emulador.exe`.
+### Windows
 
-O repositório também inclui um executável Linux já compilado em `src/emulador`. A partir da pasta `src`, rode `./emulador`. Se o sistema bloquear a execução por falta de permissão, habilite-a com `chmod +x emulador` e tente novamente. Para recompilar, use os comandos acima.
+No PowerShell, use o executável incluído:
 
-O programa abre `../IBM Logo.ch8`, carrega a ROM em `0x200`, imprime o estado dos registradores durante a execução e desenha o conteúdo do buffer gráfico no terminal. O laço final de espera mantém o processo aberto depois da execução.
+```powershell
+.\emulador.exe ..\IBM_Logo.ch8
+```
+
+Para compilar novamente, com GCC disponível no terminal (por exemplo, MinGW):
+
+```powershell
+gcc -Wall -Wextra main.c ..\lib\Emulador.c -o emulador.exe
+.\emulador.exe ..\IBM_Logo.ch8
+```
+
+Também é possível passar o caminho de outra ROM, por exemplo `./emulador ../minha-rom.ch8` no Linux ou `.\emulador.exe ..\minha-rom.ch8` no PowerShell.
+
+O programa carrega a ROM em `0x200`, imprime os registradores antes de cada instrução e desenha o buffer gráfico no terminal. No estado atual, quando detecta que o contador de programa repetiu o valor anterior, mostra a tela e fica aguardando indefinidamente; use `Ctrl+C` para encerrá-lo. Essa condição é apenas uma heurística para parar em alguns loops, não um detector geral de fim da ROM.
 
 ## Componentes principais
 
@@ -56,7 +81,7 @@ O programa abre `../IBM Logo.ch8`, carrega a ROM em `0x200`, imprime o estado do
 
 O CHIP-8 executa instruções de 16 bits (dois bytes). O programa começa no endereço `0x200`; cada ciclo busca a instrução na memória, separa seus campos e aplica a operação correspondente:
 
-1. **Carregar a ROM:** `main.c` abre `IBM Logo.ch8` e copia seus bytes para a memória a partir de `0x200`.
+1. **Carregar a ROM:** `main.c` abre o arquivo informado na linha de comando e copia seus bytes para a memória a partir de `0x200`.
 2. **Buscar (fetch):** `fetch` combina dois bytes em um opcode big-endian e avança `sysCount` em dois.
 3. **Decodificar (decode):** `decode` divide o opcode em quatro nibbles. Por exemplo, `6A12` vira `6`, `A`, `1`, `2`.
 4. **Executar (execute):** `execute` interpreta os nibbles. Saltos e instruções de skip alteram `sysCount`; as demais operações implementadas atualizam registradores, índice ou tela.
@@ -114,7 +139,7 @@ O disassembler também reconhece outros opcodes, mas isso não significa que o e
 - A maior parte das instruções aritméticas, de teclado, timers e som ainda não é executada.
 - Não há janela gráfica nem entrada de teclado; a tela é impressa como texto.
 - O desenho interrompe o sprite nas bordas, em vez de fazê-lo voltar ao lado oposto.
-- O laço principal de `main.c` usa a repetição do valor do contador de programa como condição de parada; não é um mecanismo geral de término de ROM.
+- O laço principal usa a repetição do valor do contador de programa como condição de parada; não é um mecanismo geral de término de ROM. Depois da tela, o programa espera indefinidamente até ser interrompido.
 
 ## Disassembler
 

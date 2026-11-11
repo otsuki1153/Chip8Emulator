@@ -1,8 +1,15 @@
 #include <stdio.h>
 #include "../lib/Emulador.h"
 
-int main(){
-    FILE * arquivo = fopen("../IBM Logo.ch8", "rb");
+int main(int argc, char *argv[]){
+    if(argc != 2){
+        printf("Muitos argumentos");
+        printf("Numero de argumentos: %d", argc);
+        return 1;  
+    } 
+
+    FILE * arquivo = fopen(argv[1], "rb");
+    
     Emulador emu;
     initEmulator(&emu);
 
