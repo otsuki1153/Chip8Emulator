@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "../lib/Emulador.h"
 
 int main(int argc, char *argv[]){
@@ -37,21 +38,34 @@ int main(int argc, char *argv[]){
     char  comando[50]; 
     uint16_t opcode = 0x0;
     uint8_t nibble[4];
-    uint16_t sysCountStamp = 0x0;
+    // uint16_t sysCountStamp = 0x0;
 
+ 
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
-        while(emu.sysCount != sysCountStamp){
-            printStatus(&emu);
-            sysCountStamp = emu.sysCount;
+        // while(emu.sysCount != sysCountStamp){
+        //     printStatus(&emu);
+        //     sysCountStamp = emu.sysCount;
+        //     fetch(&emu, &opcode);
+        //     decode(opcode, nibble);
+        //     disassemble(nibble, comando);
+        //     execute(&emu, nibble);
+        //     // printf("%s\n", comando);
+        // }
+        while(true){
+            // printStatus(&emu);
+            #ifdef _WIN32
+                system("cls");
+            #else
+                system("clear");
+            #endif
             fetch(&emu, &opcode);
             decode(opcode, nibble);
             disassemble(nibble, comando);
             execute(&emu, nibble);
+            printScreen(&emu);
             // printf("%s\n", comando);
         }
-        printScreen(&emu);
-        while(true);
         
     } else{
         printf("erro na leitura do arquivo");
