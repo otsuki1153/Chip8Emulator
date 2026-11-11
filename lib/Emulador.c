@@ -160,13 +160,13 @@ void execute(Emulador * param, uint8_t nibble[4]){
             uint8_t sX = param->regV[nibble[1]];
             uint8_t sY = param->regV[nibble[2]];
             param->regV[0xF] = 0;
-            for(int row = 0; row < HEIGHT; row++){
-                if(sY + row >= 32) break;
+            for(int row = 0; row < nibble[3]; row++){
+                if(sY + row >= HEIGHT) break;
 
                 uint8_t spriteB = param->memoria[param->regI + row];
 
                 for(int col = 0; col < 8;col++){
-                    if(sX + col >= 64) break;
+                    if(sX + col >= WIDTH) break;
 
                     if((spriteB & (0x80 >> col)) != 0){
                         int posX = (sX + col);
@@ -409,7 +409,7 @@ void printScreen(Emulador * param){
         printf("\n");
         for(int j = 0; j<WIDTH; j++){
             if(param->tela[i][j] == true){
-                printf("*");
+                printf("█");
             } else{
                 printf(" ");
             }

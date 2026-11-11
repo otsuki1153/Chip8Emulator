@@ -35,7 +35,7 @@ int main(){
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
         while(emu.sysCount != sysCountStamp){
-            // printStatus(&emu);
+            printStatus(&emu);
             sysCountStamp = emu.sysCount;
             fetch(&emu, &opcode);
             decode(opcode, nibble);
@@ -44,6 +44,7 @@ int main(){
             // printf("%s\n", comando);
         }
         printScreen(&emu);
+        while(true);
         
     } else{
         printf("erro na leitura do arquivo");
