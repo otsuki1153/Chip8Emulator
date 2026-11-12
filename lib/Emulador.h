@@ -25,7 +25,7 @@ bool pilhaPush(Emulador * param, uint16_t address);
 uint16_t pilhaPop(Emulador * param, bool * success);
 void fetch(Emulador * param, uint16_t *opcodeReturn);
 void decode(uint16_t opcode, uint8_t nibble[4]);
-void execute(Emulador * param, uint8_t nibble[4]);
+bool execute(Emulador * param, uint8_t nibble[4]);
 
 /**
  * @brief Com as partes já separadas do opcode verifica cada caractere em cadeia para traduzir o comando em hexadecimal de dois bytes em um buffer de texto de comando Assembly que é atribuido a variável em que foi passada o endereço dela por parâmetro  
