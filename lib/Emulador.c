@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void cleanTerminal(){
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
+
 void initEmulator(Emulador * param){
     param->sysCount = START_ADDR;
     param->regI = 0;
@@ -29,20 +37,23 @@ bool pilhaPush(Emulador * param, uint16_t address){
 }
 
 
-uint16_t pilhaPop(Emulador * param){
+uint16_t pilhaPop(Emulador * param, bool * resultado){
     if(param->posPilha == 0){
         //ERROR: STACK UNDERFLOW
-        return -1;
+        *resultado = false;
+        return 0;
     }
     param->posPilha--;
+    *resultado = true;
     return param->pilha[param->posPilha];
 }
 
-void fetch(Emulador * param, uint16_t *opcodeReturn){
-    if(param->sysCount < 0 || param->sysCount >= MEMORY_S - 1) return;
+bool fetch(Emulador * param, uint16_t *opcodeReturn){
+    if(param->sysCount >= MEMORY_S - 1) return false;
     uint16_t opcode = (param->memoria[param->sysCount] << 8) | param->memoria[param->sysCount + 1];
     incSysCount(param);
     *opcodeReturn = opcode;
+    return true;
 }
 
 void decode(uint16_t opcode, uint8_t nibble[4]){
@@ -55,46 +66,42 @@ void decode(uint16_t opcode, uint8_t nibble[4]){
     nibble[3] = low_byte & 0x0F;
 }
 
-bool execute(Emulador * param, uint8_t nibble[4]){
+ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
     uint8_t NN = (nibble[2] << 4) | nibble[3];
     uint16_t NNN = (nibble[1] << 8) | (nibble[2] << 4) | nibble[3];
 
     switch (nibble[0]){
         case 0x0:
             if(nibble[1] == 0x0 && nibble[2] == 0xE && nibble[3] == 0){
-                #ifdef _WIN32
-                    system("cls");
-                #else
-                    system("clear");
-                #endif
                 memset(param->tela, false, sizeof(param->tela));
-                return true;
+                return OK;
                 // strcpy(retorno, "CLS");
             } else if(nibble[1] == 0x0 && nibble[2] == 0xE && nibble[3] == 0xE){
-                uint16_t res = pilhaPop(param);
-                if(res == -1){
-                    return false;
+                bool sucess = false;
+                uint16_t res = pilhaPop(param, &sucess);
+                if(sucess == false){
+                    return STACK_UNDERFLOW;
                 } else{
                     param->sysCount = res;
-                    return true;
+                    return OK;
                 }
                 // strcpy(retorno, "RET");
             } else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SYS 0x%03X", NNN);
             }
             break;
         case 0x1:
             param->sysCount = NNN;
-            return true;
+            return OK;
             // snprintf(retorno, 50, "JP 0x%03X", NNN);
             break;
         case 0x2:
             if(pilhaPush(param, param->sysCount)){
                 param->sysCount = NNN;
-                return true;
+                return OK;
             } else{
-                return false;
+                return STACK_OVERFLOW;
             }
             // snprintf(retorno, 50, "CALL 0x%03X", NNN);
             break;
@@ -102,14 +109,14 @@ bool execute(Emulador * param, uint8_t nibble[4]){
             if(param->regV[nibble[1]] == NN){
                 incSysCount(param);
             }
-            return true;
+            return OK;
             // snprintf(retorno, 50, "SE V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x4:
             if(param->regV[nibble[1]] != NN){
                 incSysCount(param);
             }
-            return true;
+            return OK;
             // snprintf(retorno, 50, "SNE V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x5:
@@ -117,57 +124,57 @@ bool execute(Emulador * param, uint8_t nibble[4]){
                 if(param->regV[nibble[1]] == param->regV[nibble[2]]){
                     incSysCount(param);
                 }
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "SE V%X, V%X",nibble[1], nibble[2]);
             } else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // strcpy(retorno, "????");
             }
             break;
         case 0x6:
             param->regV[nibble[1]] = NN;
-            return true;
+            return OK;
             // snprintf(retorno, 50, "LD V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x7:
             param->regV[nibble[1]] += NN;
-            return true;
+            return OK;
             // snprintf(retorno, 50, "ADD V%X, 0x%02X", nibble[1], NN);
             break;
         case 0x8:
             if(nibble[3] == 0x0){
                 param->regV[nibble[1]] = param->regV[nibble[2]];
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "LD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x1){
                 param->regV[nibble[1]] = param->regV[nibble[1]] | param->regV[nibble[2]];
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "OR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x2){
                 param->regV[nibble[1]] = param->regV[nibble[1]] & param->regV[nibble[2]];
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "AND V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x3){
                 param->regV[nibble[1]] = param->regV[nibble[1]] ^ param->regV[nibble[2]];
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "XOR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x4){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "ADD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x5){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SUB V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x6){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SHR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x7){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SUBN V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0xE){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SHL V%X, V%X", nibble[1], nibble[2]);
             }else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // strcpy(retorno, "????");
             }
             break;
@@ -176,25 +183,25 @@ bool execute(Emulador * param, uint8_t nibble[4]){
                 if(param->regV[nibble[1]] != param->regV[nibble[2]]){
                     incSysCount(param);
                 }
-                return true;
+                return OK;
                 // snprintf(retorno, 50, "SNE V%X, V%X", nibble[1], nibble[2]);
             } else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // strcpy(retorno, "????");
             }
             break;
         case 0xA:
             param->regI = NNN;
-            return true;
+            return OK;
             // snprintf(retorno, 50, "LD I, 0x%03X", NNN);
             break;
         case 0xB:
             param->sysCount = NNN + param->regV[0];
-            return true;
+            return OK;
             // snprintf(retorno, 50, "JP V0, 0x%03X",NNN);
             break;
         case 0xC:
-            return false;
+            return NOT_IMPLEMENTED;
             // snprintf(retorno, 50, "RND V%X, 0x%02X", nibble[1], NN);
             break;
         case 0xD:
@@ -220,88 +227,88 @@ bool execute(Emulador * param, uint8_t nibble[4]){
                     }
                 }
             }
-            return true;
+            return OK;
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
         case 0xE:
             if(nibble[2] == 0x9 && nibble[3] == 0xE){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SKP V%X",nibble[1]);
             } else if(nibble[2] == 0xA && nibble[3] == 0x1){
-                return false;
+                return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SKNP V%X",nibble[1]);
             } else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // strcpy(retorno, "????");
             }
             break;
         case 0xF:
             if(nibble[2] == 0x0){
                 if(nibble[3] == 0x7){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD V%X, DT",nibble[1]);
                 } else if(nibble[3] == 0xA){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD V%X, K",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else if (nibble[2] == 0x1){
                 if(nibble[3] == 0x5){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD DT, V%X",nibble[1]);
                 } else if(nibble[3] == 0x8){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD ST, V%X",nibble[1]);
                 } else if(nibble[3] == 0xE){
                     param->regI += param->regV[nibble[1]];
-                    return true;
+                    return OK;
                     // snprintf(retorno, 50, "ADD I, V%X",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else if(nibble[2] == 0x2){
                 if(nibble[3] == 0x9){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD F, V%X",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else if(nibble[2] == 0x3){
                 if(nibble[3] == 0x3){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD B, V%X",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else if(nibble[2] == 0x5){
                 if(nibble[3] == 0x5){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD [I], V%X",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else if(nibble[2] == 0x6){
                 if(nibble[3] == 0x5){
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // snprintf(retorno, 50, "LD V%X, [I]",nibble[1]);
                 } else{
-                    return false;
+                    return NOT_IMPLEMENTED;
                     // strcpy(retorno, "????");
                 }
             } else{
-                return false;
+                return NOT_IMPLEMENTED;
                 // strcpy(retorno, "????");
             }
             
             break;
         default:
-            return false;
+            return NOT_IMPLEMENTED;
             // strcpy(retorno, "????");
             break;
     }
