@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 void cleanTerminal(){
     #ifdef _WIN32
@@ -71,7 +72,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
     uint16_t NNN = (nibble[1] << 8) | (nibble[2] << 4) | nibble[3];
 
     switch (nibble[0]){
-        case 0x0:
+        case 0x0:{
             if(nibble[1] == 0x0 && nibble[2] == 0xE && nibble[3] == 0){
                 memset(param->tela, false, sizeof(param->tela));
                 return OK;
@@ -91,12 +92,14 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // snprintf(retorno, 50, "SYS 0x%03X", NNN);
             }
             break;
-        case 0x1:
+        }
+        case 0x1:{
             param->sysCount = NNN;
             return OK;
             // snprintf(retorno, 50, "JP 0x%03X", NNN);
             break;
-        case 0x2:
+        }
+        case 0x2:{
             if(pilhaPush(param, param->sysCount)){
                 param->sysCount = NNN;
                 return OK;
@@ -105,21 +108,24 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             }
             // snprintf(retorno, 50, "CALL 0x%03X", NNN);
             break;
-        case 0x3:
+        }
+        case 0x3:{
             if(param->regV[nibble[1]] == NN){
                 incSysCount(param);
             }
             return OK;
             // snprintf(retorno, 50, "SE V%X, 0x%02X", nibble[1], NN);
             break;
-        case 0x4:
+        }
+        case 0x4:{
             if(param->regV[nibble[1]] != NN){
                 incSysCount(param);
             }
             return OK;
             // snprintf(retorno, 50, "SNE V%X, 0x%02X", nibble[1], NN);
             break;
-        case 0x5:
+        }
+        case 0x5:{
             if(nibble[3] == 0x0){
                 if(param->regV[nibble[1]] == param->regV[nibble[2]]){
                     incSysCount(param);
@@ -131,17 +137,20 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // strcpy(retorno, "????");
             }
             break;
-        case 0x6:
+        }
+        case 0x6:{
             param->regV[nibble[1]] = NN;
             return OK;
             // snprintf(retorno, 50, "LD V%X, 0x%02X", nibble[1], NN);
             break;
-        case 0x7:
+        }
+        case 0x7:{
             param->regV[nibble[1]] += NN;
             return OK;
             // snprintf(retorno, 50, "ADD V%X, 0x%02X", nibble[1], NN);
             break;
-        case 0x8:
+        }
+        case 0x8:{
             if(nibble[3] == 0x0){
                 param->regV[nibble[1]] = param->regV[nibble[2]];
                 return OK;
@@ -178,7 +187,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // strcpy(retorno, "????");
             }
             break;
-        case 0x9:
+        }
+        case 0x9:{
             if(nibble[3] == 0x0){
                 if(param->regV[nibble[1]] != param->regV[nibble[2]]){
                     incSysCount(param);
@@ -190,27 +200,34 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // strcpy(retorno, "????");
             }
             break;
-        case 0xA:
+        }
+        case 0xA:{
             param->regI = NNN;
             return OK;
             // snprintf(retorno, 50, "LD I, 0x%03X", NNN);
             break;
-        case 0xB:
+        }
+        case 0xB:{
             param->sysCount = NNN + param->regV[0];
             return OK;
             // snprintf(retorno, 50, "JP V0, 0x%03X",NNN);
             break;
-        case 0xC:
-            return NOT_IMPLEMENTED;
+        }
+        case 0xC:{
+            srand((unsigned int)time(NULL));
+            param->regV[nibble[1]] = (rand() % 256) & NN;
+            return OK;
             // snprintf(retorno, 50, "RND V%X, 0x%02X", nibble[1], NN);
             break;
-        case 0xD:
+        }
+        case 0xD:{
             uint8_t sX = param->regV[nibble[1]];
             uint8_t sY = param->regV[nibble[2]];
             param->regV[0xF] = 0;
             for(int row = 0; row < nibble[3]; row++){
                 if(sY + row >= HEIGHT) break;
 
+                if(param->regI + row > MEMORY_S - 1) return STACK_OVERFLOW;
                 uint8_t spriteB = param->memoria[param->regI + row];
 
                 for(int col = 0; col < 8;col++){
@@ -230,7 +247,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             return OK;
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
-        case 0xE:
+        }
+        case 0xE:{
             if(nibble[2] == 0x9 && nibble[3] == 0xE){
                 return NOT_IMPLEMENTED;
                 // snprintf(retorno, 50, "SKP V%X",nibble[1]);
@@ -242,7 +260,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // strcpy(retorno, "????");
             }
             break;
-        case 0xF:
+        }
+        case 0xF:{
             if(nibble[2] == 0x0){
                 if(nibble[3] == 0x7){
                     return NOT_IMPLEMENTED;
@@ -287,7 +306,15 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 }
             } else if(nibble[2] == 0x5){
                 if(nibble[3] == 0x5){
-                    return NOT_IMPLEMENTED;
+                    for(int i = 0; i <= nibble[1]; i++){
+                        if(param->regI + i < MEMORY_S - 1){
+                            param->memoria[param->regI + i] = param->regV[i];
+                        }else{
+                            return STACK_OVERFLOW;
+                        }
+                    }
+                    param->regI += nibble[1] + 1;
+                    return OK;
                     // snprintf(retorno, 50, "LD [I], V%X",nibble[1]);
                 } else{
                     return NOT_IMPLEMENTED;
@@ -295,7 +322,15 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 }
             } else if(nibble[2] == 0x6){
                 if(nibble[3] == 0x5){
-                    return NOT_IMPLEMENTED;
+                    for(int i = 0; i <= nibble[1]; i++){
+                        if(param->regI + i <= MEMORY_S - 1){
+                            param->regV[i] = param->memoria[param->regI + i] ;
+                        } else{
+                            return STACK_OVERFLOW;
+                        }
+                    }
+                    param->regI += nibble[1] + 1;
+                    return OK;
                     // snprintf(retorno, 50, "LD V%X, [I]",nibble[1]);
                 } else{
                     return NOT_IMPLEMENTED;
@@ -307,10 +342,13 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             }
             
             break;
-        default:
+        }
+        default:{
             return NOT_IMPLEMENTED;
             // strcpy(retorno, "????");
             break;
+        }
+        return NOT_IMPLEMENTED;
     }
 }
 
@@ -477,7 +515,7 @@ void printScreen(Emulador * param){
         printf("\n");
         for(int j = 0; j<WIDTH; j++){
             if(param->tela[i][j] == true){
-                printf("H");
+                printf("#");
             } else{
                 printf(" ");
             }

@@ -3,9 +3,13 @@
 
 int main(int argc, char *argv[]){
     if(argc != 2){
-        printf("Muitos argumentos");
+        if(argc > 2){
+            printf("Muitos argumentos\n");
+        } else{
+            printf("Muitos argumentos\n");
+        }
         printf("Numero de argumentos: %d", argc);
-        return 1;  
+        return 1;
     } 
 
     FILE * arquivo = fopen(argv[1], "rb");
@@ -53,25 +57,29 @@ int main(int argc, char *argv[]){
         // }
         while(true){
             // printStatus(&emu);
-            void cleanTerminal();
+            cleanTerminal();
             sysCountStamp = emu.sysCount;
             if(!fetch(&emu, &opcode))printf("Program Counter excedeu a memória");
             decode(opcode, nibble);
             disassemble(nibble, comando);
             execStatus = execute(&emu, nibble);
 
-            if(execStatus == OK){
+            if(execStatus == NOT_IMPLEMENTED){
                 printScreen(&emu);
-            } else if(execStatus == NOT_IMPLEMENTED){
-                printf("_____OPCODE NÃO IDENTIFICADO_____");
-                printf("pc: %04X, opcode: %04X, comando: %s", sysCountStamp,opcode, comando);
-                printf("_________________________________");
+                printf("_____OPCODE NÃO IDENTIFICADO_____\n");
+                printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
+                printf("_________________________________\n");
                 break;
             } else if (execStatus == STACK_OVERFLOW){
-                printf("Erro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
-            } else{
-                printf("Erro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
+                printScreen(&emu);
+                printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
+                break;
+            } else if (execStatus == STACK_UNDERFLOW){
+                printScreen(&emu);
+                printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
+                break;
             }
+            printScreen(&emu);
         }
         
     } else{
