@@ -6,9 +6,9 @@ int main(int argc, char *argv[]){
         if(argc > 2){
             printf("Muitos argumentos\n");
         } else{
-            printf("Muitos argumentos\n");
+            printf("Poucos argumentos\n");
         }
-        printf("Numero de argumentos: %d", argc);
+        printf("Numero de argumentos: %d\n", argc);
         return 1;
     } 
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
 
             if(execStatus == NOT_IMPLEMENTED){
                 printScreen(&emu);
-                printf("_____OPCODE NÃO IDENTIFICADO_____\n");
+                printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
                 printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
                 printf("_________________________________\n");
                 break;

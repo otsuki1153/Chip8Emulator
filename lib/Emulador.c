@@ -168,10 +168,31 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 return OK;
                 // snprintf(retorno, 50, "XOR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x4){
-                return NOT_IMPLEMENTED;
+                uint16_t res = param->regV[nibble[1]] + param->regV[nibble[2]];
+                if(res > UINT8_MAX){
+                    param->regV[0xF] = 1;
+                } else{
+                    param->regV[0xF] = 0;
+                }
+
+                if(param->regV[nibble[1]] == param->regV[0xF]){
+                    param->regV[0xF] = 0;
+                }
+                param->regV[nibble[1]];
+                return OK;
                 // snprintf(retorno, 50, "ADD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x5){
-                return NOT_IMPLEMENTED;
+                uint8_t res = param->regV[nibble[1]] - param->regV[nibble[2]];
+                if(res < 0){
+                    param->regV[0xF] = 0;
+                } else{
+                    param->regV[0xF] = 1;
+                }
+
+                if(param->regV[nibble[1]] == param->regV[0xF]){
+                    param->regV[0xF] = 1;
+                }
+                return OK;
                 // snprintf(retorno, 50, "SUB V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x6){
                 return NOT_IMPLEMENTED;
