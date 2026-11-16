@@ -78,6 +78,10 @@ int main(int argc, char *argv[]){
                 printScreen(&emu);
                 printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
                 break;
+            } else if (execStatus == MEMORY_OUT_OF_BOUNDS){
+                printScreen(&emu);
+                printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
+                break;
             }
             printScreen(&emu);
         }

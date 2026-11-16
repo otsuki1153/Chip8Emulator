@@ -256,7 +256,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             for(int row = 0; row < nibble[3]; row++){
                 if(sY + row >= HEIGHT) break;
 
-                if(param->regI + row >= MEMORY_S - 1) return STACK_OVERFLOW;
+                if(param->regI + row >= MEMORY_S - 1) return MEMORY_OUT_OF_BOUNDS;
                 uint8_t spriteB = param->memoria[param->regI + row];
 
                 for(int col = 0; col < 8;col++){
@@ -328,7 +328,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             } else if(nibble[2] == 0x3){
                 if(nibble[3] == 0x3){
                     uint8_t valor = param->regV[nibble[1]];
-                    if(param->regI + 2 >= MEMORY_S) return STACK_OVERFLOW;
+                    if(param->regI + 2 >= MEMORY_S) return MEMORY_OUT_OF_BOUNDS;
                     param->memoria[param->regI] = valor/100;
                     param->memoria[param->regI + 1] = (valor/10) % 10;
                     param->memoria[param->regI + 2] = valor % 10;
@@ -344,7 +344,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                         if(param->regI + i <= MEMORY_S - 1){
                             param->memoria[param->regI + i] = param->regV[i];
                         }else{
-                            return STACK_OVERFLOW;
+                            return MEMORY_OUT_OF_BOUNDS;
                         }
                     }
                     param->regI += nibble[1] + 1;
@@ -360,7 +360,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                         if(param->regI + i < MEMORY_S - 1){
                             param->regV[i] = param->memoria[param->regI + i] ;
                         } else{
-                            return STACK_OVERFLOW;
+                            return MEMORY_OUT_OF_BOUNDS;
                         }
                     }
                     param->regI += nibble[1] + 1;

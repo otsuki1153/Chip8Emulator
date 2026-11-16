@@ -30,7 +30,8 @@ typedef enum ExecuteStatus{
     OK,
     STACK_OVERFLOW,
     STACK_UNDERFLOW,
-    NOT_IMPLEMENTED
+    NOT_IMPLEMENTED,
+    MEMORY_OUT_OF_BOUNDS
 } ExecuteStatus;
 
 ExecuteStatus execute(Emulador * param, uint8_t nibble[4]);
