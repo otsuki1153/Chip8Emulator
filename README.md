@@ -1,157 +1,120 @@
 # CHIP-8 em C: [disassembler](https://github.com/otsuki1153/Disassembler-Model) e emulador
 
-Projeto de estudo para explorar o funcionamento de um interpretador CHIP-8 e de um disassembler. O núcleo está escrito em C e, no estado atual, executa algumas instruções e desenha em uma tela textual no terminal.
+Projeto de estudo sobre emulação CHIP-8, escrito em C. O programa carrega uma ROM indicada na linha de comando, executa as instruções implementadas e desenha a tela no terminal. O projeto de disassembler ligado no título é separado deste emulador.
 
-## Estado atual
+## Estado do projeto
 
-O projeto inclui:
+O núcleo já implementa o ciclo de busca, decodificação e execução, uma parte das instruções CHIP-8, a pilha de sub-rotinas e o desenho de sprites. O emulador ainda não tem teclado, temporizadores, som ou janela gráfica; ROMs que dependem desses recursos podem parar ao encontrar uma instrução não implementada.
 
-- Estado da máquina com 4.096 bytes de memória, 16 registradores `V0`–`VF`, registrador `I`, contador de programa, pilha de 16 posições e tela monocromática de 64 × 32.
-- Inicialização da máquina e operações de push/pop da pilha, com retorno indicando overflow ou underflow.
-- Busca de opcodes de dois bytes em big-endian, separação em nibbles e avanço do contador de programa.
-- Disassembler que converte opcodes em mnemônicos para depuração.
-- Execução implementada para `00E0`, `1NNN`, `3XNN`, `4XNN`, `5XY0`, `6XNN`, `7XNN`, `8XY0`–`8XY3`, `9XY0`, `ANNN`, `BNNN`, `DXYN` e `FX1E`.
-- Desenho de sprites na tela textual e indicação de colisão em `VF`.
-- Um programa de entrada que recebe o caminho de uma ROM como argumento, exibe o estado dos registradores e executa o programa.
+### Funcionalidades e próximos passos
 
-O disassembler reconhece mais instruções do que o executor implementa. Instruções sem implementação no `execute` não alteram o estado da máquina (com exceção do avanço do contador feito por `fetch`). A ROM IBM Logo pode não terminar: o programa não implementa um ciclo de temporização, teclado ou outras instruções necessárias para compatibilidade geral.
+| Área | Implementado | Falta fazer |
+|---|---|---|
+| Máquina | Memória de 4 KB, registradores `V0`–`VF`, `I`, contador de programa e tela 64 × 32. | Completar a validação de limites e tratar falhas de leitura do contador de programa. |
+| Pilha | Pilha de 16 posições; `CALL`/`RET` retornam erro de overflow/underflow. | — |
+| Instruções | Conjunto listado na tabela abaixo, incluindo aritmética, saltos, desenho e operações de memória. | Implementar os opcodes restantes e conferir comportamentos de compatibilidade CHIP-8. |
+| ROM | Recebe o caminho da ROM como argumento; aceita arquivos de até 3.584 bytes. | Melhorar mensagens e tratamento de erros de arquivo. |
+| Tela | Desenha os pixels no terminal e limpa a tela entre ciclos. | Adicionar janela gráfica e entrada de teclado. |
+| Temporização e som | — | Implementar timers CHIP-8, relógio de execução e som. |
+| Validação | Há ROMs de teste no repositório. | Executar e validar as ROMs após implementar teclado, timers e opcodes restantes. |
 
-## Estrutura
+### Instruções implementadas
+
+`X` e `Y` indicam registradores, `NN` é um valor de 8 bits, `NNN` um endereço de 12 bits e `N` um valor de 4 bits.
+
+| Opcode(s) | Comportamento |
+|---|---|
+| `00E0`, `00EE` | Limpa a tela; retorna de uma sub-rotina. |
+| `1NNN`, `2NNN` | Salta para `NNN`; chama uma sub-rotina em `NNN`. |
+| `3XNN`, `4XNN`, `5XY0`, `9XY0` | Pula a instrução seguinte conforme a comparação de registradores e valores. |
+| `6XNN`, `7XNN` | Carrega valor imediato em `VX`; soma valor imediato a `VX`. |
+| `8XY0`–`8XY7`, `8XYE` | Cópia, operações OR/AND/XOR, soma, subtração e deslocamentos. |
+| `ANNN`, `BNNN` | Define `I`; salta para `NNN + V0`. |
+| `CXNN` | Gera um valor aleatório e aplica a máscara `NN`. |
+| `DXYN` | Desenha sprite de `N` linhas usando os dados em `I`; registra colisão em `VF`. |
+| `FX1E` | Soma `VX` a `I`. |
+| `FX33`, `FX55`, `FX65` | Escreve os dígitos decimais de `VX` na memória; salva ou carrega registradores em memória. |
+
+Os deslocamentos `8XY6` e `8XYE` copiam primeiro `VY` para `VX` e deslocam `VX`. As operações `FX55` e `FX65` também avançam `I` após transferir os registradores. O desenho para nas bordas da tela, sem voltar ao lado oposto.
+
+## Como funciona
+
+1. `main.c` recebe um caminho de ROM, abre o arquivo e copia seus bytes para a memória a partir do endereço `0x200`.
+2. `fetch` lê dois bytes em big-endian para formar um opcode e avança o contador de programa em dois.
+3. `decode` divide o opcode em quatro nibbles. Por exemplo, `6A12` é separado em `6`, `A`, `1` e `2`.
+4. `execute` aplica a instrução: pode atualizar registradores, pilha, memória, tela ou contador de programa.
+5. A tela é redesenhada no terminal a cada instrução. Se o executor retornar uma instrução não implementada ou um erro de pilha/memória, o programa mostra a mensagem e encerra o ciclo.
+
+## Arquivos do projeto
 
 ```text
 .
-├── IBM_Logo.ch8        # ROM de exemplo
+├── IBM_Logo.ch8             # ROM de exemplo
+├── 1-chip8-logo.ch8          # Teste do logo CHIP-8 (Timendus)
+├── 3-corax+.ch8              # Teste de opcodes (Timendus)
+├── 4-flags.ch8               # Teste de flags (Timendus)
+├── 5-quirks.ch8              # Teste de diferenças de comportamento (Timendus)
+├── 6-keypad.ch8              # Teste de teclado (Timendus)
+├── 7-beep.ch8                # Teste de som (Timendus)
+├── 8-scrolling.ch8           # Teste de rolagem (Timendus)
 ├── lib/
-│   ├── Emulador.h      # Estrutura, constantes e declarações da API
-│   └── Emulador.c      # Estado, ciclo de instruções, disassembler e saída no terminal
+│   ├── Emulador.h             # Estrutura, constantes, status e declarações
+│   └── Emulador.c             # Estado, execução, disassembler e saída no terminal
 └── src/
-    ├── main.c           # Recebe o caminho da ROM e executa o ciclo
-    ├── emulador         # Executável Linux incluído
-    └── emulador.exe     # Executável Windows incluído
+    ├── main.c                 # Carregamento da ROM e ciclo principal
+    ├── emulador               # Executável Linux incluído
+    └── emulador.exe           # Executável Windows incluído
 ```
 
-## Compilar e executar
+As ROMs `6-keypad.ch8` e `7-beep.ch8` verificam recursos que ainda não estão implementados. As outras também podem depender de instruções ou detalhes de comportamento ausentes; a presença dos arquivos não significa que os testes já passem.
 
-O programa recebe o caminho da ROM como único argumento. A ROM de exemplo está na raiz do projeto. Os comandos abaixo devem ser executados a partir de `src`.
+## Executar
+
+Passe o caminho da ROM como único argumento. Execute os comandos a partir da pasta `src`, onde estão os binários; os exemplos usam uma ROM que fica um nível acima.
 
 ### Linux
 
-Para usar o executável incluído:
-
 ```sh
 ./emulador ../IBM_Logo.ch8
 ```
 
-Se não tiver permissão para executá-lo, rode `chmod +x emulador` uma vez. Para compilar novamente com GCC:
+Se necessário, permita a execução com `chmod +x emulador`. Para executar uma ROM de teste, por exemplo:
+
+```sh
+./emulador ../3-corax+.ch8
+```
+
+### Windows (PowerShell)
+
+```powershell
+.\emulador.exe ..\IBM_Logo.ch8
+```
+
+Para executar uma ROM de teste:
+
+```powershell
+.\emulador.exe ..\3-corax+.ch8
+```
+
+### Compilar
+
+Com GCC instalado, compile a partir da pasta `src`.
+
+Linux:
 
 ```sh
 gcc -Wall -Wextra main.c ../lib/Emulador.c -o emulador
-./emulador ../IBM_Logo.ch8
 ```
 
-### Windows
-
-No PowerShell, use o executável incluído:
-
-```powershell
-.\emulador.exe ..\IBM_Logo.ch8
-```
-
-Para compilar novamente, com GCC disponível no terminal (por exemplo, MinGW):
+Windows, usando GCC (por exemplo, MinGW):
 
 ```powershell
 gcc -Wall -Wextra main.c ..\lib\Emulador.c -o emulador.exe
-.\emulador.exe ..\IBM_Logo.ch8
 ```
-
-Também é possível passar o caminho de outra ROM, por exemplo `./emulador ../minha-rom.ch8` no Linux ou `.\emulador.exe ..\minha-rom.ch8` no PowerShell.
-
-O programa carrega a ROM em `0x200`, imprime os registradores antes de cada instrução e desenha o buffer gráfico no terminal. No estado atual, quando detecta que o contador de programa repetiu o valor anterior, mostra a tela e fica aguardando indefinidamente; use `Ctrl+C` para encerrá-lo. Essa condição é apenas uma heurística para parar em alguns loops, não um detector geral de fim da ROM.
-
-## Componentes principais
-
-- `Emulador` reúne memória, tela, registradores, pilha e contador de programa.
-- `initEmulator` zera o estado e inicia `sysCount` em `0x200`.
-- `fetch` lê o opcode na posição atual e avança `sysCount` em dois bytes.
-- `decode` separa o opcode em quatro nibbles; `execute` aplica as operações implementadas.
-- `disassemble` produz o mnemônico textual do opcode, independentemente de sua execução estar implementada.
-- `printStatus` e `printScreen` exibem o estado da máquina no terminal.
-
-## Como o emulador funciona
-
-O CHIP-8 executa instruções de 16 bits (dois bytes). O programa começa no endereço `0x200`; cada ciclo busca a instrução na memória, separa seus campos e aplica a operação correspondente:
-
-1. **Carregar a ROM:** `main.c` abre o arquivo informado na linha de comando e copia seus bytes para a memória a partir de `0x200`.
-2. **Buscar (fetch):** `fetch` combina dois bytes em um opcode big-endian e avança `sysCount` em dois.
-3. **Decodificar (decode):** `decode` divide o opcode em quatro nibbles. Por exemplo, `6A12` vira `6`, `A`, `1`, `2`.
-4. **Executar (execute):** `execute` interpreta os nibbles. Saltos e instruções de skip alteram `sysCount`; as demais operações implementadas atualizam registradores, índice ou tela.
-5. **Exibir:** `main.c` imprime o estado antes de cada ciclo e, ao sair do laço, mostra o buffer gráfico no terminal.
-
-O contador já aponta para a próxima instrução quando `execute` é chamado. Por isso, um salto define diretamente o novo endereço, e uma instrução de skip avança mais dois bytes para pular a próxima instrução.
-
-### Estado da máquina
-
-| Campo | Função |
-|---|---|
-| `memoria[4096]` | Memória de 4 KB; a ROM é carregada a partir de `0x200`. |
-| `regV[16]` | Registradores de 8 bits `V0` a `VF`; `VF` também é usado como flag de colisão no desenho. |
-| `regI` | Registrador de índice, usado para endereçar dados e sprites. |
-| `sysCount` | Contador de programa: endereço da próxima instrução a buscar. |
-| `pilha[16]`, `posPilha` | Espaço para endereços de retorno de sub-rotinas; push/pop estão implementados, mas ainda não são usados por `CALL`/`RET`. |
-| `tela[32][64]` | Buffer monocromático; `true` representa pixel aceso. |
-
-### Instruções com execução implementada
-
-`X` e `Y` representam registradores, `NN` um byte imediato, `NNN` um endereço de 12 bits e `N` um nibble.
-
-| Opcode | Efeito implementado |
-|---|---|
-| `00E0` | Limpa o buffer da tela. |
-| `1NNN` | Salta para o endereço `NNN`. |
-| `3XNN`, `4XNN` | Pula a próxima instrução se `VX` for igual/diferente de `NN`. |
-| `5XY0`, `9XY0` | Pula a próxima instrução se `VX` for igual/diferente de `VY`. |
-| `6XNN`, `7XNN` | Carrega `NN` em `VX` ou soma `NN` a `VX` (com o limite natural de 8 bits). |
-| `8XY0`–`8XY3` | Copia `VY` para `VX`, ou aplica OR, AND ou XOR entre eles. |
-| `ANNN` | Carrega `NNN` em `I`. |
-| `BNNN` | Salta para `NNN + V0`. |
-| `DXYN` | Desenha até `N` linhas de sprite apontadas por `I` nas coordenadas `VX`, `VY`; pixels são alternados (XOR) e `VF` recebe 1 se algum pixel aceso foi apagado. |
-| `FX1E` | Soma `VX` a `I`. |
-
-O disassembler também reconhece outros opcodes, mas isso não significa que o executor os implemente. OpCodes não listados aqui ainda não têm efeito funcional em `execute`.
-
-### O que falta fazer
-
-| Prioridade sugerida | Trabalho | Resultado esperado |
-|---|---|---|
-| 1 | Ligar `2NNN` e `00EE` às funções de pilha | Chamada e retorno corretos de sub-rotinas. |
-| 2 | Completar instruções `8XY*`, `CXNN`, `EX9E` e `EXA1` | Operações aritméticas, aleatórias e skips por teclado. |
-| 3 | Implementar timers e instruções `FX**` restantes | Temporizador de atraso/som e operações de memória/fontes. |
-| 4 | Adicionar entrada de teclado e temporização de 60 Hz | Execução interativa e comportamento temporal CHIP-8. |
-| 5 | Validar limites e erros do carregamento/acesso à memória | Evitar leitura fora da memória e informar ROM inválida. |
-| 6 | Adicionar testes por instrução e ROMs de validação | Conferir efeitos em registradores, memória e tela. |
-| 7 | Criar uma janela gráfica | Apresentar pixels e receber entrada de forma visual. |
-
-## Limitações conhecidas
-
-- O carregador no `main.c` limita a ROM a 3.584 bytes, para caber na memória a partir de `0x200`.
-- Não há validação de limites de memória no `fetch` nem no acesso aos dados dos sprites.
-- `CALL` (`2NNN`) e `RET` (`00EE`) são reconhecidos pelo disassembler, mas ainda não são executados; as funções da pilha existem, mas não estão ligadas a essas instruções.
-- A maior parte das instruções aritméticas, de teclado, timers e som ainda não é executada.
-- Não há janela gráfica nem entrada de teclado; a tela é impressa como texto.
-- O desenho interrompe o sprite nas bordas, em vez de fazê-lo voltar ao lado oposto.
-- O laço principal usa a repetição do valor do contador de programa como condição de parada; não é um mecanismo geral de término de ROM. Depois da tela, o programa espera indefinidamente até ser interrompido.
 
 ## Disassembler
 
-O [disassembler](https://github.com/otsuki1153/Disassembler-Model) é um projeto separado que lê uma ROM e imprime os opcodes como mnemônicos. A análise é linear: interpreta cada par de bytes como uma instrução, sem distinguir código de dados. Bytes de sprites ou dados podem, portanto, aparecer como instruções inválidas ou inesperadas.
-
-## Próximos passos possíveis
-
-- Implementar `CALL` e `RET` usando a pilha existente.
-- Completar a execução dos grupos aritmético, teclado e timers.
-- Adicionar carregamento de ROM com validações de tamanho e de acesso à memória.
-- Implementar temporização e uma interface gráfica com teclado.
-- Criar testes automatizados para as instruções já implementadas.
+O [disassembler CHIP-8](https://github.com/otsuki1153/Disassembler-Model) é um projeto separado que lê uma ROM e traduz os opcodes em mnemônicos. A análise linear não diferencia código de dados, então bytes de sprites podem aparecer como instruções desconhecidas.
 
 ## Referências
 
