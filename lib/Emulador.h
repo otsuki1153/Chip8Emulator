@@ -17,6 +17,8 @@ typedef struct Emulador{
     uint8_t regV[16];
     uint16_t regI;
     uint16_t sysCount;
+    uint8_t DT;
+    uint8_t ST;
 } Emulador;
 
 void initEmulator(Emulador * param);  

@@ -14,8 +14,10 @@ void cleanTerminal(){
 
 void initEmulator(Emulador * param){
     param->sysCount = START_ADDR;
-    param->regI = 0;
-    param->posPilha = 0;
+    param->regI = 0x0;
+    param->posPilha = 0x0;
+    param->DT = 0x0;
+    param->ST = 0x0;
     memset(param->memoria, 0,sizeof(param->memoria));
     memset(param->regV, 0,sizeof(param->regV));
     memset(param->pilha, 0,sizeof(param->pilha));
@@ -293,7 +295,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
         case 0xF:{
             if(nibble[2] == 0x0){
                 if(nibble[3] == 0x7){
-                    return NOT_IMPLEMENTED;
+                    param->regV[nibble[1]] = param->DT;
+                    return OK;
                     // snprintf(retorno, 50, "LD V%X, DT",nibble[1]);
                 } else if(nibble[3] == 0xA){
                     return NOT_IMPLEMENTED;
@@ -304,10 +307,12 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 }
             } else if (nibble[2] == 0x1){
                 if(nibble[3] == 0x5){
-                    return NOT_IMPLEMENTED;
+                    param->DT = param->regV[nibble[1]];
+                    return OK;
                     // snprintf(retorno, 50, "LD DT, V%X",nibble[1]);
                 } else if(nibble[3] == 0x8){
-                    return NOT_IMPLEMENTED;
+                    param->ST = param->regV[nibble[1]];
+                    return OK;
                     // snprintf(retorno, 50, "LD ST, V%X",nibble[1]);
                 } else if(nibble[3] == 0xE){
                     param->regI += param->regV[nibble[1]];
