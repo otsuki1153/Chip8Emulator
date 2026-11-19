@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
         bool error = false;
         while(!error){
             // printStatus(&emu);
-            for(int i = 0; i > N; i++){
+            for(int i = 0; i < N; i++){
             //     cleanTerminal();
             //     sysCountStamp = emu.sysCount;
             //     if(!fetch(&emu, &opcode))printf("Program Counter excedeu a memória");
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
             //         break;
             //     }
             //     printScreen(&emu);
-                runEmulator(&emu, comando, opcode, nibble, sysCountStamp, execStatus, error);
+                runEmulator(&emu, comando, &opcode, nibble, &sysCountStamp, &execStatus, &error);
                 if(error){
                     break;
                 }
