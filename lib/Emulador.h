@@ -8,6 +8,7 @@
 #define START_ADDR 0x200
 #define WIDTH 64
 #define HEIGHT 32
+#define N 10
 
 typedef struct Emulador{
     bool tela[HEIGHT][WIDTH];
@@ -64,4 +65,8 @@ void printStatus(Emulador * param);
  * @return nada, só printa a tela de acordo com o buffer do emulador
  */
 void printScreen(Emulador * param);
+
+void decTimers(Emulador * param);
+
+void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus);
 #endif // !EMULATOR

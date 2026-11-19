@@ -46,44 +46,52 @@ int main(int argc, char *argv[]){
  
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
-        // while(emu.sysCount != sysCountStamp){
-        //     printStatus(&emu);
-        //     sysCountStamp = emu.sysCount;
-        //     fetch(&emu, &opcode);
-        //     decode(opcode, nibble);
-        //     disassemble(nibble, comando);
-        //     execute(&emu, nibble);
-        //     // printf("%s\n", comando);
-        // }
-        while(true){
+        bool error = false;
+        while(!error){
             // printStatus(&emu);
-            cleanTerminal();
-            sysCountStamp = emu.sysCount;
-            if(!fetch(&emu, &opcode))printf("Program Counter excedeu a memória");
-            decode(opcode, nibble);
-            disassemble(nibble, comando);
-            execStatus = execute(&emu, nibble);
+            for(int i = 0; i > N; i++){
+            //     cleanTerminal();
+            //     sysCountStamp = emu.sysCount;
+            //     if(!fetch(&emu, &opcode))printf("Program Counter excedeu a memória");
+            //     decode(opcode, nibble);
+            //     disassemble(nibble, comando);
+            //     execStatus = execute(&emu, nibble);
+    
+            //     if(execStatus == NOT_IMPLEMENTED){
+            //         printScreen(&emu);
+            //         printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
+            //         printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
+            //         printf("_________________________________\n");
+            //         error = true;
+            //         break;
+            //     } else if (execStatus == STACK_OVERFLOW){
+            //         printScreen(&emu);
+            //         printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
+            //         error = true;
+            //         break;
+            //     } else if (execStatus == STACK_UNDERFLOW){
+            //         printScreen(&emu);
+            //         printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
+            //         error = true;
+            //         break;
+            //     } else if (execStatus == MEMORY_OUT_OF_BOUNDS){
+            //         printScreen(&emu);
+            //         printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
+            //         error = true;
+            //         break;
+            //     }
 
-            if(execStatus == NOT_IMPLEMENTED){
-                printScreen(&emu);
-                printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
-                printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
-                printf("_________________________________\n");
-                break;
-            } else if (execStatus == STACK_OVERFLOW){
-                printScreen(&emu);
-                printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
-                break;
-            } else if (execStatus == STACK_UNDERFLOW){
-                printScreen(&emu);
-                printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
-                break;
-            } else if (execStatus == MEMORY_OUT_OF_BOUNDS){
-                printScreen(&emu);
-                printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
-                break;
+            //     if(emu.sysCount == sysCountStamp) {
+            //         error = true;
+            //         break;
+            //     }
+            //     printScreen(&emu);
+                runEmulator(&emu, comando, opcode, nibble, sysCountStamp, execStatus, error);
+                if(error){
+                    break;
+                }
             }
-            printScreen(&emu);
+            decTimers(&emu);
         }
         
     } else{

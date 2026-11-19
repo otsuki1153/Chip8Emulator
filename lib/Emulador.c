@@ -561,3 +561,42 @@ void printScreen(Emulador * param){
         }
     }
 }   
+
+void decTimers(Emulador * param){
+    param->DT--;
+    param->ST--;
+}
+
+void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus){
+    cleanTerminal();
+    sysCountStamp = param->sysCount;
+    if(!fetch(param, &opcode))printf("Program Counter excedeu a memória");
+    decode(opcode, nibble);
+    disassemble(nibble, comando);
+    execStatus = execute(param, nibble);
+
+    if(execStatus == NOT_IMPLEMENTED){
+        printScreen(param);
+        printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
+        printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
+        printf("_________________________________\n");
+        errorStatus = true;
+    } else if (execStatus == STACK_OVERFLOW){
+        printScreen(param);
+        printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
+        errorStatus = true;
+    } else if (execStatus == STACK_UNDERFLOW){
+        printScreen(param);
+        printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
+        errorStatus = true;
+    } else if (execStatus == MEMORY_OUT_OF_BOUNDS){
+        printScreen(param);
+        printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
+        errorStatus = true;
+    }
+
+    if(param->sysCount == sysCountStamp) {
+        errorStatus = true;
+    }
+    printScreen(param);
+}
