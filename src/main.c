@@ -49,43 +49,8 @@ int main(int argc, char *argv[]){
         bool error = false;
         while(!error){
             // printStatus(&emu);
+            // emu.memoria[0x1FF] = 1;
             for(int i = 0; i < N; i++){
-            //     cleanTerminal();
-            //     sysCountStamp = emu.sysCount;
-            //     if(!fetch(&emu, &opcode))printf("Program Counter excedeu a memória");
-            //     decode(opcode, nibble);
-            //     disassemble(nibble, comando);
-            //     execStatus = execute(&emu, nibble);
-    
-            //     if(execStatus == NOT_IMPLEMENTED){
-            //         printScreen(&emu);
-            //         printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
-            //         printf("pc: %04X, opcode: %04X, comando: %s\n", sysCountStamp,opcode, comando);
-            //         printf("_________________________________\n");
-            //         error = true;
-            //         break;
-            //     } else if (execStatus == STACK_OVERFLOW){
-            //         printScreen(&emu);
-            //         printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
-            //         error = true;
-            //         break;
-            //     } else if (execStatus == STACK_UNDERFLOW){
-            //         printScreen(&emu);
-            //         printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
-            //         error = true;
-            //         break;
-            //     } else if (execStatus == MEMORY_OUT_OF_BOUNDS){
-            //         printScreen(&emu);
-            //         printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
-            //         error = true;
-            //         break;
-            //     }
-
-            //     if(emu.sysCount == sysCountStamp) {
-            //         error = true;
-            //         break;
-            //     }
-            //     printScreen(&emu);
                 runEmulator(&emu, comando, &opcode, nibble, &sysCountStamp, &execStatus, &error);
                 if(error){
                     break;

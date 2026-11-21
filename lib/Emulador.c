@@ -22,6 +22,7 @@ void initEmulator(Emulador * param){
     memset(param->regV, 0,sizeof(param->regV));
     memset(param->pilha, 0,sizeof(param->pilha));
     memset(param->tela, false, sizeof(param->tela));
+    memset(param->teclas, false, sizeof(param->teclas));
 }
 
 void incSysCount(Emulador * param){
@@ -281,10 +282,18 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
         }
         case 0xE:{
             if(nibble[2] == 0x9 && nibble[3] == 0xE){
-                return NOT_IMPLEMENTED;
+                if(nibble[1] >= 16) return KEYBOARD_OUT_OF_BOUNDS;
+                if(param->teclas[nibble[1]] == true){
+                    incSysCount(param);
+                }
+                return OK;
                 // snprintf(retorno, 50, "SKP V%X",nibble[1]);
             } else if(nibble[2] == 0xA && nibble[3] == 0x1){
-                return NOT_IMPLEMENTED;
+                if(nibble[1] >= 16) return KEYBOARD_OUT_OF_BOUNDS;
+                if(param->teclas[nibble[1]] == false){
+                    incSysCount(param);
+                }
+                return OK;
                 // snprintf(retorno, 50, "SKNP V%X",nibble[1]);
             } else{
                 return NOT_IMPLEMENTED;
@@ -593,6 +602,9 @@ void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * 
         printScreen(param);
         printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
         *errorStatus = true;
+    }else if(*execStatus == KEYBOARD_OUT_OF_BOUNDS){
+        printScreen(param);
+        printf("\nErro de KEYBOARD_OUT_OF_BOUNDS: houve uma tentativa de acesso a um teclado inexistente");
     }
 
     if(param->sysCount == *sysCountStamp) {

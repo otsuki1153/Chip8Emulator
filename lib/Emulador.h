@@ -12,6 +12,7 @@
 
 typedef struct Emulador{
     bool tela[HEIGHT][WIDTH];
+    bool teclas[16];
     uint8_t memoria[MEMORY_S];
     uint16_t pilha [STACK_S];
     uint8_t posPilha;
@@ -34,7 +35,8 @@ typedef enum ExecuteStatus{
     STACK_OVERFLOW,
     STACK_UNDERFLOW,
     NOT_IMPLEMENTED,
-    MEMORY_OUT_OF_BOUNDS
+    MEMORY_OUT_OF_BOUNDS,
+    KEYBOARD_OUT_OF_BOUNDS
 } ExecuteStatus;
 
 ExecuteStatus execute(Emulador * param, uint8_t nibble[4]);
