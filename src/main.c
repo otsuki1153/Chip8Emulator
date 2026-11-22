@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
         bool error = false;
         while(!error){
             // printStatus(&emu);
-            // emu.memoria[0x1FF] = 1;
+            emu.memoria[0x1FF] = 1;
             for(int i = 0; i < N; i++){
                 runEmulator(&emu, comando, &opcode, nibble, &sysCountStamp, &execStatus, &error);
                 if(error){
