@@ -18,6 +18,7 @@ void initEmulator(Emulador * param){
     param->posPilha = 0x0;
     param->DT = 0x0;
     param->ST = 0x0;
+    param->legacy_mode = false;
     memset(param->memoria, 0,sizeof(param->memoria));
     memset(param->regV, 0,sizeof(param->regV));
     memset(param->pilha, 0,sizeof(param->pilha));
@@ -160,14 +161,23 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // snprintf(retorno, 50, "LD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x1){
                 param->regV[nibble[1]] = param->regV[nibble[1]] | param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "OR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x2){
                 param->regV[nibble[1]] = param->regV[nibble[1]] & param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "AND V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x3){
                 param->regV[nibble[1]] = param->regV[nibble[1]] ^ param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "XOR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x4){
@@ -253,8 +263,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             break;
         }
         case 0xD:{
-            uint8_t sX = param->regV[nibble[1]];
-            uint8_t sY = param->regV[nibble[2]];
+            uint8_t sX = param->regV[nibble[1]] % WIDTH;
+            uint8_t sY = param->regV[nibble[2]] % HEIGHT;
             param->regV[0xF] = 0;
             for(int row = 0; row < nibble[3]; row++){
                 if(sY + row >= HEIGHT) break;
@@ -276,7 +286,7 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                     }
                 }
             }
-            return OK;
+            return DRAW_EXECUTED;
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
         }

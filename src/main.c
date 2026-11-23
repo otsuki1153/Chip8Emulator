@@ -38,6 +38,21 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    int conf = 0;
+
+    printf("Escolha a configuração que quer rodar o emulador(padrão 1):\n");
+    printf("1. Antiga\n");
+    printf("2. Recente\n");
+    scanf("%d", &conf);
+    getchar();
+
+    if(conf > 2 || conf <= 0){
+        printf("Opção inválida, selecionado opção 1");
+        conf = 1;
+    }
+
+    emu.legacy_mode = conf == 1 ? true : false; 
+    
     char  comando[50]; 
     uint16_t opcode = 0x0;
     uint8_t nibble[4];
@@ -47,13 +62,22 @@ int main(int argc, char *argv[]){
     fseek(arquivo, 0, SEEK_SET);
     if(fread(&emu.memoria[START_ADDR], 1 , tamanho, arquivo) == tamanho){
         bool error = false;
+        emu.memoria[0x1FF] = 1;
+        int n = emu.legacy_mode ? 50 : 10;
         while(!error){
             // printStatus(&emu);
-            emu.memoria[0x1FF] = 1;
-            for(int i = 0; i < N; i++){
+            for(int i = 0; i < n; i++){
+                execStatus = OK;
                 runEmulator(&emu, comando, &opcode, nibble, &sysCountStamp, &execStatus, &error);
-                if(error){
-                    break;
+
+                if(emu.legacy_mode){
+                    if(error || execStatus == DRAW_EXECUTED){
+                        break;
+                    }
+                } else{
+                    if(error){
+                        break;
+                    }
                 }
             }
             decTimers(&emu);
