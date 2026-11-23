@@ -14,12 +14,16 @@ void cleanTerminal(){
 
 void initEmulator(Emulador * param){
     param->sysCount = START_ADDR;
-    param->regI = 0;
-    param->posPilha = 0;
+    param->regI = 0x0;
+    param->posPilha = 0x0;
+    param->DT = 0x0;
+    param->ST = 0x0;
+    param->legacy_mode = false;
     memset(param->memoria, 0,sizeof(param->memoria));
     memset(param->regV, 0,sizeof(param->regV));
     memset(param->pilha, 0,sizeof(param->pilha));
     memset(param->tela, false, sizeof(param->tela));
+    memset(param->teclas, false, sizeof(param->teclas));
 }
 
 void incSysCount(Emulador * param){
@@ -157,14 +161,23 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 // snprintf(retorno, 50, "LD V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x1){
                 param->regV[nibble[1]] = param->regV[nibble[1]] | param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "OR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x2){
                 param->regV[nibble[1]] = param->regV[nibble[1]] & param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "AND V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x3){
                 param->regV[nibble[1]] = param->regV[nibble[1]] ^ param->regV[nibble[2]];
+                if(param->legacy_mode){
+                    param->regV[0xF] = 0;
+                }
                 return OK;
                 // snprintf(retorno, 50, "XOR V%X, V%X", nibble[1], nibble[2]);
             } else if(nibble[3] == 0x4){
@@ -250,8 +263,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
             break;
         }
         case 0xD:{
-            uint8_t sX = param->regV[nibble[1]];
-            uint8_t sY = param->regV[nibble[2]];
+            uint8_t sX = param->regV[nibble[1]] % WIDTH;
+            uint8_t sY = param->regV[nibble[2]] % HEIGHT;
             param->regV[0xF] = 0;
             for(int row = 0; row < nibble[3]; row++){
                 if(sY + row >= HEIGHT) break;
@@ -273,16 +286,24 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                     }
                 }
             }
-            return OK;
+            return DRAW_EXECUTED;
             // snprintf(retorno, 50, "DRW V%X, V%X, 0x%X", nibble[1],nibble[2], nibble[3]);
             break;
         }
         case 0xE:{
             if(nibble[2] == 0x9 && nibble[3] == 0xE){
-                return NOT_IMPLEMENTED;
+                if(nibble[1] >= 16) return KEYBOARD_OUT_OF_BOUNDS;
+                if(param->teclas[nibble[1]] == true){
+                    incSysCount(param);
+                }
+                return OK;
                 // snprintf(retorno, 50, "SKP V%X",nibble[1]);
             } else if(nibble[2] == 0xA && nibble[3] == 0x1){
-                return NOT_IMPLEMENTED;
+                if(nibble[1] >= 16) return KEYBOARD_OUT_OF_BOUNDS;
+                if(param->teclas[nibble[1]] == false){
+                    incSysCount(param);
+                }
+                return OK;
                 // snprintf(retorno, 50, "SKNP V%X",nibble[1]);
             } else{
                 return NOT_IMPLEMENTED;
@@ -293,7 +314,8 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
         case 0xF:{
             if(nibble[2] == 0x0){
                 if(nibble[3] == 0x7){
-                    return NOT_IMPLEMENTED;
+                    param->regV[nibble[1]] = param->DT;
+                    return OK;
                     // snprintf(retorno, 50, "LD V%X, DT",nibble[1]);
                 } else if(nibble[3] == 0xA){
                     return NOT_IMPLEMENTED;
@@ -304,10 +326,12 @@ ExecuteStatus execute(Emulador * param, uint8_t nibble[4]){
                 }
             } else if (nibble[2] == 0x1){
                 if(nibble[3] == 0x5){
-                    return NOT_IMPLEMENTED;
+                    param->DT = param->regV[nibble[1]];
+                    return OK;
                     // snprintf(retorno, 50, "LD DT, V%X",nibble[1]);
                 } else if(nibble[3] == 0x8){
-                    return NOT_IMPLEMENTED;
+                    param->ST = param->regV[nibble[1]];
+                    return OK;
                     // snprintf(retorno, 50, "LD ST, V%X",nibble[1]);
                 } else if(nibble[3] == 0xE){
                     param->regI += param->regV[nibble[1]];
@@ -556,3 +580,46 @@ void printScreen(Emulador * param){
         }
     }
 }   
+
+void decTimers(Emulador * param){
+    param->DT--;
+    param->ST--;
+}
+
+void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus){
+    cleanTerminal();
+    *sysCountStamp = param->sysCount;
+    if(!fetch(param, opcode))printf("Program Counter excedeu a memória");
+    decode(*opcode, nibble);
+    disassemble(nibble, comando);
+    *execStatus = execute(param, nibble);
+
+    if(*execStatus == NOT_IMPLEMENTED){
+        printScreen(param);
+        printf("\n_____OPCODE NÃO IDENTIFICADO_____\n");
+        printf("pc: %04X, opcode: %04X, comando: %s\n", *sysCountStamp,*opcode, comando);
+        printf("_________________________________\n");
+        *errorStatus = true;
+    } else if (*execStatus == STACK_OVERFLOW){
+        printScreen(param);
+        printf("\nErro de Stack Overflow: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da stack");
+        *errorStatus = true;
+    } else if (*execStatus == STACK_UNDERFLOW){
+        printScreen(param);
+        printf("\nErro de Stack Underflow: houve uma tentativa de acesso a uma posição inexistente abaixo do tamanho da stack");
+        *errorStatus = true;
+    } else if (*execStatus == MEMORY_OUT_OF_BOUNDS){
+        printScreen(param);
+        printf("\nErro de MEMORY OUT OF BOUNDS: houve uma tentativa de acesso a uma posição inexistente acima do tamanho da memoria");
+        *errorStatus = true;
+    }else if(*execStatus == KEYBOARD_OUT_OF_BOUNDS){
+        printScreen(param);
+        printf("\nErro de KEYBOARD_OUT_OF_BOUNDS: houve uma tentativa de acesso a um teclado inexistente");
+    }
+
+    if(param->sysCount == *sysCountStamp) {
+        printf("\nErro de Jump to Yourself: houve uma tentativa de pulo a uma posição de contagem de sistema identica a atual");
+        *errorStatus = true;
+    }
+    printScreen(param);
+}

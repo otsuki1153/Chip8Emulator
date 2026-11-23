@@ -8,15 +8,20 @@
 #define START_ADDR 0x200
 #define WIDTH 64
 #define HEIGHT 32
+#define N 50
 
 typedef struct Emulador{
     bool tela[HEIGHT][WIDTH];
+    bool teclas[16];
+    bool legacy_mode;
     uint8_t memoria[MEMORY_S];
     uint16_t pilha [STACK_S];
     uint8_t posPilha;
     uint8_t regV[16];
     uint16_t regI;
     uint16_t sysCount;
+    uint8_t DT;
+    uint8_t ST;
 } Emulador;
 
 void initEmulator(Emulador * param);  
@@ -31,7 +36,9 @@ typedef enum ExecuteStatus{
     STACK_OVERFLOW,
     STACK_UNDERFLOW,
     NOT_IMPLEMENTED,
-    MEMORY_OUT_OF_BOUNDS
+    MEMORY_OUT_OF_BOUNDS,
+    KEYBOARD_OUT_OF_BOUNDS,
+    DRAW_EXECUTED
 } ExecuteStatus;
 
 ExecuteStatus execute(Emulador * param, uint8_t nibble[4]);
@@ -62,4 +69,8 @@ void printStatus(Emulador * param);
  * @return nada, só printa a tela de acordo com o buffer do emulador
  */
 void printScreen(Emulador * param);
+
+void decTimers(Emulador * param);
+
+void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus);
 #endif // !EMULATOR
