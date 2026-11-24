@@ -8,7 +8,6 @@
 #define START_ADDR 0x200
 #define WIDTH 64
 #define HEIGHT 32
-#define N 50
 
 typedef struct Emulador{
     bool tela[HEIGHT][WIDTH];
