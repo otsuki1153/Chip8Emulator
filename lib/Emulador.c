@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <stdbool.h>
 
 void cleanTerminal(){
     #ifdef _WIN32
@@ -582,9 +581,18 @@ void printScreen(Emulador * param){
     }
 }   
 
-void decTimers(Emulador * param){
-    param->DT--;
-    param->ST--;
+TimerStatus decTimers(Emulador * param){
+    if(param->DT > 0){
+        param->DT--;
+    } else{
+        return DELAY_TIMER_UNDERFLOW;
+    }
+    if(param->ST > 0){
+        param->ST--;
+    } else{
+        return SOUND_TIMER_UNDERFLOW;
+    }
+    return OK;
 }
 
 void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus){
@@ -616,11 +624,13 @@ void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * 
     }else if(*execStatus == KEYBOARD_OUT_OF_BOUNDS){
         printScreen(param);
         printf("\nErro de KEYBOARD_OUT_OF_BOUNDS: houve uma tentativa de acesso a um teclado inexistente");
+        *errorStatus = true;
     }
 
     if(param->sysCount == *sysCountStamp) {
+        printScreen(param);
         printf("\nErro de Jump to Yourself: houve uma tentativa de pulo a uma posição de contagem de sistema identica a atual");
         *errorStatus = true;
     }
-    printScreen(param);
+    // printScreen(param);
 }

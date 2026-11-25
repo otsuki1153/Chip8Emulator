@@ -69,7 +69,13 @@ void printStatus(Emulador * param);
  */
 void printScreen(Emulador * param);
 
-void decTimers(Emulador * param);
+typedef enum TimerStatus{
+    CHILL,
+    DELAY_TIMER_UNDERFLOW,
+    SOUND_TIMER_UNDERFLOW
+} TimerStatus;
+
+TimerStatus decTimers(Emulador * param);
 
 void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus);
 #endif // !EMULATOR

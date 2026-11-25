@@ -6,9 +6,8 @@
 
 #include "Emulador.h"
 #include<SDL3/SDL.h>
-#include<SDL3/SDL_main.h>
 
-bool initDisplay(SDL_Window * window, SDL_Renderer * renderer, SDL_WindowFlags flags, SDL_Texture * texture);
+bool initDisplay(SDL_Window ** window, SDL_Renderer ** renderer, SDL_WindowFlags flags, SDL_Texture ** texture);
 void printDisplay(Emulador * param,  SDL_Texture * texture, SDL_Renderer * renderer);
 
 #endif // !DISPLAY
