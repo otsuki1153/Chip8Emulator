@@ -1,6 +1,6 @@
 # CHIP-8 em C: [disassembler](https://github.com/otsuki1153/Disassembler-Model) e emulador
 
-Projeto de estudo sobre emulação CHIP-8, escrito em C. O programa carrega uma ROM indicada na linha de comando, executa as instruções implementadas e desenha a tela no terminal. O projeto de disassembler ligado no título é separado deste emulador.
+Projeto de estudo sobre emulação CHIP-8, escrito em C. O programa carrega uma ROM indicada na linha de comando, executa as instruções implementadas e desenha a tela em uma janela SDL3. O projeto de disassembler ligado no título é separado deste emulador.
 
 ## Estado do projeto
 
@@ -14,8 +14,8 @@ O núcleo já implementa o ciclo de busca, decodificação e execução, uma par
 | Pilha | Pilha de 16 posições; `CALL`/`RET` retornam erro de overflow/underflow. | — |
 | Instruções | Conjunto listado na tabela abaixo, incluindo aritmética, saltos, desenho e operações de memória. | Implementar os opcodes restantes e conferir comportamentos de compatibilidade CHIP-8. |
 | ROM | Recebe o caminho da ROM como argumento; aceita arquivos de até 3.584 bytes. | Melhorar mensagens e tratamento de erros de arquivo. |
-| Tela | Desenha os pixels no terminal e limpa a tela entre ciclos. | Adicionar janela gráfica e entrada de teclado. |
-| Temporização e som | — | Implementar timers CHIP-8, relógio de execução e som. |
+| Tela | Desenha os pixels em uma janela SDL3. | Adicionar entrada de teclado. |
+| Temporização e som | Limita o ciclo a cerca de 60 atualizações por segundo; detecta status de underflow dos timers. | Completar a temporização CHIP-8 e implementar som. |
 | Validação | Há ROMs de teste no repositório. | Executar e validar as ROMs após implementar teclado, timers e opcodes restantes. |
 
 ### Instruções implementadas
@@ -43,7 +43,7 @@ Os deslocamentos `8XY6` e `8XYE` copiam primeiro `VY` para `VX` e deslocam `VX`.
 2. `fetch` lê dois bytes em big-endian para formar um opcode e avança o contador de programa em dois.
 3. `decode` divide o opcode em quatro nibbles. Por exemplo, `6A12` é separado em `6`, `A`, `1` e `2`.
 4. `execute` aplica a instrução: pode atualizar registradores, pilha, memória, tela ou contador de programa.
-5. A tela é redesenhada no terminal a cada instrução. Se o executor retornar uma instrução não implementada ou um erro de pilha/memória, o programa mostra a mensagem e encerra o ciclo.
+5. A tela é atualizada na janela SDL3 ao longo da execução. Se o executor retornar uma instrução não implementada ou um erro de pilha/memória, o programa mostra a mensagem e encerra o ciclo.
 
 ## Arquivos do projeto
 
@@ -98,19 +98,21 @@ Para executar uma ROM de teste:
 
 ### Compilar
 
-Com GCC instalado, compile a partir da pasta `src`.
+Compile a partir da pasta `src`. O projeto usa SDL3 para abrir a janela gráfica, então inclua `display.c` e vincule a biblioteca SDL3.
 
-Linux:
+Linux, com SDL3 e `pkg-config` instalados:
 
 ```sh
-gcc -Wall -Wextra main.c ../lib/Emulador.c -o emulador
+gcc -Wall -Wextra main.c ../lib/Emulador.c ../lib/display.c -o emulador $(pkg-config --cflags --libs sdl3)
 ```
 
-Windows, usando GCC (por exemplo, MinGW):
+Windows no CMD, com GCC e SDL3 do MSYS2 UCRT64:
 
-```powershell
-gcc -Wall -Wextra main.c ..\lib\Emulador.c -o emulador.exe
+```cmd
+gcc -Wall -Wextra main.c ..\lib\Emulador.c ..\lib\display.c -IC:\msys64\ucrt64\include -LC:\msys64\ucrt64\lib -lSDL3 -o emulador.exe
 ```
+
+Ajuste os caminhos de include e biblioteca se o MSYS2 estiver instalado em outro local. Execute o comando dentro de `src`.
 
 ## Disassembler
 
@@ -226,11 +228,11 @@ A busca verifica se há pelo menos dois bytes disponíveis antes de ler um opcod
 
 ### Temporizadores, teclado e saída
 
-O ciclo principal chama `decTimers` uma vez depois de cada lote de instruções: 50 instruções no modo antigo e 10 no recente. A função decrementa `DT` e `ST` como inteiros sem sinal, sem verificar se já chegaram a zero e sem medir tempo real. Assim, essa rotina é apenas uma implementação inicial e não reproduz a frequência padrão dos timers CHIP-8. `FX07`, `FX15` e `FX18` permitem ler e escrever os campos, mas o timer de som não está ligado a uma saída de áudio.
+O ciclo principal chama `decTimers` uma vez depois de cada lote de instruções: 50 instruções no modo antigo e 10 no recente. O ciclo é limitado a cerca de 60 atualizações por segundo. `decTimers` retorna um status se `DT` ou `ST` já estiverem em zero; os timers ainda não seguem a frequência CHIP-8 independente do ciclo. `FX07`, `FX15` e `FX18` permitem ler e escrever os campos, mas o timer de som não está ligado a uma saída de áudio.
 
 As condições `EX9E` e `EXA1` consultam o vetor `teclas`, inicializado com todas as entradas falsas. Não há leitura de teclado no terminal ou janela para atualizar esse vetor. `FX0A`, que esperaria por uma tecla, retorna `NOT_IMPLEMENTED`.
 
-A tela é representada como uma matriz booleana de 64 colunas por 32 linhas e impressa como `#` para pixel aceso e espaço para pixel apagado. `cleanTerminal` executa `cls` no Windows ou `clear` em outros sistemas antes de processar cada instrução; portanto, a apresentação depende de um terminal compatível com esses comandos e pode piscar ou rolar conforme o ambiente. Não existe janela gráfica.
+A tela emulada é representada por uma matriz booleana de 64 colunas por 32 linhas e desenhada em uma janela SDL3. Ainda não há leitura de teclado pela janela.
 
 ### Detalhes do carregamento da ROM
 
@@ -238,7 +240,7 @@ O executável exige exatamente um argumento além do nome do programa: o caminho
 
 ### Construção e dependências
 
-O código depende da biblioteca padrão de C e usa `stdint.h`, `stdbool.h`, `stdio.h`, `stdlib.h`, `string.h` e `time.h`. Não há biblioteca gráfica ou dependência externa para compilar o núcleo. Os comandos de compilação acima partem da pasta `src` e compilam `main.c` junto com `../lib/Emulador.c`; os executáveis incluídos no repositório podem não refletir uma compilação mais recente do código-fonte.
+O código usa a biblioteca padrão de C e depende da SDL3 para a janela gráfica. Os comandos de compilação acima partem da pasta `src` e compilam `main.c`, `../lib/Emulador.c` e `../lib/display.c`; os executáveis incluídos no repositório podem não refletir uma compilação mais recente do código-fonte.
 
 ### Escopo dos arquivos de teste
 

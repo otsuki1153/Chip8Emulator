@@ -596,7 +596,7 @@ TimerStatus decTimers(Emulador * param){
 }
 
 void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus){
-    cleanTerminal();
+    // cleanTerminal();
     *sysCountStamp = param->sysCount;
     if(!fetch(param, opcode))printf("Program Counter excedeu a memória");
     decode(*opcode, nibble);
