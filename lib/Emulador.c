@@ -592,7 +592,7 @@ TimerStatus decTimers(Emulador * param){
     } else{
         return SOUND_TIMER_UNDERFLOW;
     }
-    return OK;
+    return CHILL;
 }
 
 void runEmulator(Emulador * param, char * comando, uint16_t * opcode, uint8_t * nibble, uint16_t * sysCountStamp, ExecuteStatus * execStatus, bool * errorStatus){

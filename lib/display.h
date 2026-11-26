@@ -9,5 +9,6 @@
 
 bool initDisplay(SDL_Window ** window, SDL_Renderer ** renderer, SDL_WindowFlags flags, SDL_Texture ** texture);
 void printDisplay(Emulador * param,  SDL_Texture * texture, SDL_Renderer * renderer);
+void keyPadProcess(Emulador * param);
 
 #endif // !DISPLAY
