@@ -98,9 +98,9 @@ int main(int argc, char *argv[]){
             double time = (double)(finalFreq - startfreq)/freq;
             timerStatus = decTimers(&emu);
             if(timerStatus == DELAY_TIMER_UNDERFLOW){
-                printf("Erro de DELAY_TIMER_UNDERFLOW: houve uma tentativa de decrementar o valor do timer do delay para o valor menor que zero");
+                printf("\nErro de DELAY_TIMER_UNDERFLOW: houve uma tentativa de decrementar o valor do timer do delay para o valor menor que zero\n");
             } else if(timerStatus == SOUND_TIMER_UNDERFLOW){
-                printf("Erro de SOUND_TIMER_UNDERFLOW: houve uma tentativa de decrementar o valor do timer do som para o valor menor que zero");
+                printf("\nErro de SOUND_TIMER_UNDERFLOW: houve uma tentativa de decrementar o valor do timer do som para o valor menor que zero\n");
             }
             if(time < Target_FPS){
                 double time_left = Target_FPS - time;
